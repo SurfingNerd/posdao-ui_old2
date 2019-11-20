@@ -1,0 +1,13 @@
+/*
+
+import { observable } from 'mobx';
+
+interface Pool {
+    public miningAddress: string;
+    public stakingAddress: string;
+    public stake: number;
+    public nrDelegators: number;
+}
+
+export default Pool;
+*/
