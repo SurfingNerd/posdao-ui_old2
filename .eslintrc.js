@@ -23,5 +23,26 @@ module.exports = {
       '@typescript-eslint/no-use-before-define': 0,
       // TODO: Eliminate by refining global property injection.
       '@typescript-eslint/no-non-null-assertion': 0,
+
+      // I don't like that being enforced
+      'lines-between-class-members': 0,
+
+      // prevent HTML code in JSX from being stretched too much
+      'react/jsx-one-expression-per-line': [1, { 'allow': 'single-child' }],
+
+      // allow interface names to have a leading I
+      '@typescript-eslint/interface-name-prefix': 0,
+
+      // allow to use parseInt with default radix value
+      'radix': 0,
+
+      // copied over from airbnb, but increased from 100 to 120
+      'max-len': ['warn', 120, 2, {
+        ignoreUrls: true,
+        ignoreComments: false,
+        ignoreRegExpLiterals: true,
+        ignoreStrings: true,
+        ignoreTemplateLiterals: true,
+      }],
     },
   };
