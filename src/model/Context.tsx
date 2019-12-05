@@ -6,7 +6,7 @@ import Web3 from 'web3';
 import { computed, observable } from 'mobx';
 import * as ValidatorSetBuildfile from '../contracts/ValidatorSetAuRa.json';
 import * as StakingBuildfile from '../contracts/StakingAuRaCoins.json';
-import Amount from './Amount';
+// import Amount from './Amount';
 // import { Pool } from './Pool';
 // TODO: this is likely not working because of https://github.com/ethereum-ts/TypeChain/issues/187
 // import * as TestAbi from '../abis/ValidatorSetAuRa.d';
@@ -20,6 +20,7 @@ declare global {
 
 type Address = string;
 
+// TODO: check this instead: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Function/call
 declare global {
   interface String {
     print(): string; // in ATS units
@@ -59,7 +60,7 @@ String.prototype.asNumber = function (this: string) {
   const web3 = new Web3();
   return parseFloat(web3.utils.fromWei(this));
 };
-type AmountTmp = string;
+type Amount = string;
 
 interface IDelegator {
   address: Address;
@@ -86,9 +87,9 @@ export interface IPool {
   readonly stakingAddress: Address;
   miningAddress: Address;
   isCurrentValidator: boolean;
-  candidateStake: AmountTmp;
-  totalStake: Amount; // TODO: use BN instead (?)
-  myStake: AmountTmp;
+  candidateStake: Amount;
+  totalStake: Amount;
+  myStake: Amount;
   delegators: Array<IDelegator>; // TODO: how to cast to Array<IDelegator> ?
   isMe: boolean;
 }
@@ -99,11 +100,11 @@ export default class Context {
   @observable public myAddr: Address = '';
 
   // in Ether (not wei!)
-  @observable public myBalance: AmountTmp = '';
+  @observable public myBalance: Amount = '';
 
-  public candidateMinStake: AmountTmp = '';
+  public candidateMinStake: Amount = '';
 
-  public delegatorMinStake: AmountTmp = '';
+  public delegatorMinStake: Amount = '';
 
   @observable public stakingEpoch = -1;
 
@@ -211,9 +212,10 @@ export default class Context {
     }
 
     try {
-      // amount is ignore
+      // amount is ignored
       const receipt = await this.stContract.methods.stake(poolAddr, 0).send(txOpts);
-      console.log(`receipt: ${JSON.stringify(receipt, null, 2)}`);
+      // console.log(`receipt: ${JSON.stringify(receipt, null, 2)}`);
+      console.log(`tx ${receipt.transactionHash} for stake(): block ${receipt.blockNumber}, ${receipt.gasUsed} gas`);
     } catch (e) {
       console.log(`failed with ${e}`);
     }
@@ -280,6 +282,7 @@ export default class Context {
   private async syncPoolsState() {
     this.pools = [];
     const poolAddrs: Array<string> = await this.stContract.methods.getPools().call();
+    console.log(`fetched ${poolAddrs.length} pool addresses. Iterating...`);
     poolAddrs.forEach(async (stakingAddress) => {
       console.log(`checking pool ${stakingAddress}`);
       const miningAddress = await this.vsContract.methods.miningByStakingAddress(stakingAddress).call();
@@ -293,7 +296,7 @@ export default class Context {
         isCurrentValidator: false,
         stakingAddress,
         candidateStake,
-        totalStake: new Amount(totalStake),
+        totalStake,
         myStake,
         delegators: delegatorAddrs.map((da) => ({ address: da })),
         isMe: stakingAddress === this.myAddr,
@@ -337,7 +340,9 @@ export default class Context {
     this.updateCurrentValidators();
   }
 
+  private handledStEvents = new Set<number>();
   // listens for events we're interested in and triggers actions accordingly
+  // TODO: does the mix of 2 web3 instances as event source cause troubles?
   private async subscribeToEvents(web3Instance: Web3): Promise<void> {
     this.currentBlockNumber = await web3Instance.eth.getBlockNumber();
     web3Instance.eth.subscribe('newBlockHeaders', async (error, blockHeader) => {
@@ -351,7 +356,10 @@ export default class Context {
     this.stContract.events.allEvents({}, async (error: any, event: any) => {
       if (error) {
         console.log(`event error: ${error}`);
+      } else if (this.handledStEvents.has(event.blockNumber)) {
+        console.log(`staking contract event for block ${event.blockNumber} already handled, ignoring`);
       } else {
+        this.handledStEvents.add(event.blockNumber);
         console.log(`staking contract event ${event.event} originating from ${event.address} at block ${event.blockNumber}`);
         await this.syncPoolsState();
       }
@@ -365,6 +373,7 @@ export default class Context {
         console.log(`event error: ${error}`);
       } else {
         console.log(`validatorset contract event ${event.event} at block ${event.blockNumber}`);
+        // TODO: if any handler is added here, make sure it's not triggered more than once per block
       }
     });
   }

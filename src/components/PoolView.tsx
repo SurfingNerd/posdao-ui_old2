@@ -53,7 +53,7 @@ export default class PoolView extends React.Component<PoolViewProps, {}> {
         <td className={stakingAddressClass}>{pool.stakingAddress}</td>
         <td className={miningAddressClass}>{pool.miningAddress}</td>
         <td>{pool.candidateStake.asNumber()}</td>
-        <td>{pool.totalStake.fromWei()}</td>
+        <td>{pool.totalStake.asNumber()}</td>
         <td className="text-primary">{pool.myStake.asNumber()}</td>
         <td>{pool.delegators.length}</td>
         <td>
