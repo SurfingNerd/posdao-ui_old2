@@ -291,15 +291,6 @@ export default class Context {
     }
   }
 
-  // await context.stContract.methods.maxWithdrawOrderAllowed("0x0b2F5E2f3cbd864eAA2c642e3769c1582361CAF6", "0x32E4E4c7c5d1CEa5db5F9202a9E4D99E56c91a24").call()
-  // await context.stContract.methods.orderedWithdrawAmount("0x0b2F5E2f3cbd864eAA2c642e3769c1582361CAF6", "0x32E4E4c7c5d1CEa5db5F9202a9E4D99E56c91a24").call()
-
-  // await context.stContract.methods.orderWithdraw("0x0b2F5E2f3cbd864eAA2c642e3769c1582361CAF6", "2000000000000000000").send({from: "0x32E4E4c7c5d1CEa5db5F9202a9E4D99E56c91a24"})
-  // await context.stContract.methods.claimOrderedWithdraw("0x0b2F5E2f3cbd864eAA2c642e3769c1582361CAF6").send({from: "0x32E4E4c7c5d1CEa5db5F9202a9E4D99E56c91a24"})
-
-  // await context.stContract.methods.orderWithdrawEpoch("0x0b2F5E2f3cbd864eAA2c642e3769c1582361CAF6", "0x32E4E4c7c5d1CEa5db5F9202a9E4D99E56c91a24").call({from: "0x32E4E4c7c5d1CEa5db5F9202a9E4D99E56c91a24"})
-
-
   // ============================= PRIVATE INTERFACE ==================================
 
   // connection provided via Metamask.
