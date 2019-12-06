@@ -18,7 +18,7 @@ class App extends React.Component<AppProps, {}> {
   private async handleAddPool() {
     this.processing = true;
     const { context } = this.props;
-    if (!await context.checkCanStakeNow()) {
+    if (!context.canStakeOrWithdrawNow) {
       alert('outside staking window');
     }
     await context.createPool(this.miningKeyAddr);
@@ -26,9 +26,14 @@ class App extends React.Component<AppProps, {}> {
   }
 
   @computed
-  get stakingWindowState(): string {
+  get isStakingAllowed(): boolean {
     const { context } = this.props;
-    return context.stakingAllowedTimeframe > 0 ? 'open' : 'closed';
+    return context.stakingAllowedTimeframe > 0 && context.canStakeOrWithdrawNow;
+  }
+
+  @computed
+  get stakingAllowedState(): string {
+    return this.isStakingAllowed ? 'allowed' : 'NOT allowed';
   }
 
   // TODO: should the key prop be here or inside the view?
@@ -46,20 +51,21 @@ class App extends React.Component<AppProps, {}> {
             account: <span className="text-primary">{context.myAddr}</span> |
             balance: {context.myBalance.print()} ATS<br />
 
-            current block nr: {context.currentBlockNumber} | current epoch: {context.stakingEpoch}
-            | staking window {this.stakingWindowState}: {context.stakingAllowedTimeframe} blocks
+            current block nr: {context.currentBlockNumber} | current epoch: {context.stakingEpoch} |
+            <span className={`${this.isStakingAllowed ? 'text-success' : 'text-danger'}`}> staking {this.stakingAllowedState}: {context.stakingAllowedTimeframe} blocks</span>
           </p>
         </header>
-        <div className="container" id="poolList">
+        <div id="poolList">
           <table className="table table-bordered">
             <thead>
               <tr>
                 <th>staking address</th>
                 <th>mining address</th>
+                <th>nr delegators</th>
                 <th>candidate stake</th>
                 <th>total stake</th>
                 <th>my stake</th>
-                <th>nr delegators</th>
+                <th>claimable</th>
                 <th>actions</th>
               </tr>
             </thead>
@@ -69,7 +75,7 @@ class App extends React.Component<AppProps, {}> {
           </table>
         </div>
         <div id="addPool" hidden={context.iHaveAPool}>
-          <input type="text" placeholder="mining key" onChange={(e) => this.miningKeyAddr = e.currentTarget.value} />
+          <input type="text" placeholder="mining key" onChange={(e) => (this.miningKeyAddr = e.currentTarget.value)} />
           <button type="button" disabled={this.processing} onClick={this.handleAddPool}>Add Pool</button>
         </div>
         <div id="removePool" hidden={!context.iHaveAPool}>

@@ -9,8 +9,6 @@ import * as serviceWorker from './serviceWorker';
 const rpcUrl = new URL(process.env.RPC_URL || 'ws://localhost:9541');
 const validatorSetContractAddress = process.env.REACT_APP_VALIDATORSET_CONTRACT || '0x1000000000000000000000000000000000000001';
 
-let context: Context;
-
 ReactDOM.render(
   <h1>loading...</h1>,
   document.getElementById('root'),
@@ -18,12 +16,13 @@ ReactDOM.render(
 
 // debug
 declare let window: any;
+
 Context.initialize(rpcUrl, validatorSetContractAddress).then((ctx) => {
-  context = ctx;
-  window.context = context;
+  // debug
+  window.context = ctx;
 
   ReactDOM.render(
-    <App context={context} />,
+    <App context={ctx} />,
     document.getElementById('root'),
   );
 });

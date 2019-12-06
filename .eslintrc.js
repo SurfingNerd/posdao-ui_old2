@@ -44,5 +44,14 @@ module.exports = {
         ignoreStrings: true,
         ignoreTemplateLiterals: true,
       }],
+
+      // a problem for very old browsers only
+      'no-multi-str': 0,
+
+      // we love alerts ;-)
+      'no-alert': 0,
+
+      // allows to be a bit more concise, yet explicit
+      'no-return-assign': ['warn', 'except-parens'],
     },
   };

@@ -3,6 +3,7 @@
 // TODO: reduce use of "any" type
 
 import Web3 from 'web3';
+import BN from 'bn.js';
 import { computed, observable } from 'mobx';
 import * as ValidatorSetBuildfile from '../contracts/ValidatorSetAuRa.json';
 import * as StakingBuildfile from '../contracts/StakingAuRaCoins.json';
@@ -11,12 +12,16 @@ import * as StakingBuildfile from '../contracts/StakingAuRaCoins.json';
 // TODO: this is likely not working because of https://github.com/ethereum-ts/TypeChain/issues/187
 // import * as TestAbi from '../abis/ValidatorSetAuRa.d';
 
-// TODO: like this?
+// needed for querying injected web3 (e.g. from Metamask)
 declare global {
   interface Window {
     ethereum: any;
   }
 }
+
+// for debug
+declare let window: any;
+window.BN = BN;
 
 type Address = string;
 
@@ -90,10 +95,16 @@ export interface IPool {
   candidateStake: Amount;
   totalStake: Amount;
   myStake: Amount;
+  claimable: {
+    amount: Amount;
+    unlockEpoch: number;
+    canClaimNow(): boolean;
+  };
   delegators: Array<IDelegator>; // TODO: how to cast to Array<IDelegator> ?
   isMe: boolean;
 }
 
+// TODO: dry-run / estimate gas before sending actual transactions
 export default class Context {
   @observable public currentBlockNumber = -1;
 
@@ -107,6 +118,9 @@ export default class Context {
   public delegatorMinStake: Amount = '';
 
   @observable public stakingEpoch = -1;
+
+  // TODO: find better name
+  @observable public canStakeOrWithdrawNow = false;
 
   // positive value: allowed for n more blocks
   // negative value: allowed in n blocks
@@ -156,32 +170,30 @@ export default class Context {
   }
 
   // returns true if staking/withdrawing etc. are currently allowed
-  // TODO: find a better name
-  public async checkCanStakeNow(): Promise<boolean> {
+  /*
+  public async canStakeOrWithdrawNow(): Promise<boolean> {
     const canStake = await this.stContract.methods.areStakeAndWithdrawAllowed().call();
+    // We need to access stakingAllowedTimeframe in order to trigger an update when needed
+    if (this.stakingAllowedTimeframe > 0 && !canStake) {
+      console.log('state mismatch between stakingAllowedTimeframe and canStake()');
+    }
     if (!canStake) {
       console.log('staking season currently closed');
       return false;
     }
     return true;
   }
+  */
 
   // creates a pool for the currently connected account (account address becomes staking address)
   // TODO: figure out return type and how to deal with asynchrony and errors
-  public async createPool(miningKeyAddr: Address) {
-    if (!await this.checkCanStakeNow()) {
+  public async createPool(miningKeyAddr: Address): Promise<void> {
+    if (!this.canStakeOrWithdrawNow) {
       return;
     }
 
     const txOpts = this.defaultTxOpts;
     txOpts.value = this.candidateMinStake;
-
-    try {
-      // TODO: check if this works now, if so, use it
-      const gasEst = await this.stContract.methods.addPool(0, miningKeyAddr).estimateGas(txOpts);
-    } catch (e) {
-      console.log(`estimating gas failed with ${e}`);
-    }
 
     try {
       // <amount> argument is ignored by the contract (exists for chains with token based staking)
@@ -195,21 +207,15 @@ export default class Context {
   // stake the given amount (in ATS) on the given pool (identified by staking address)
   // TODO: use Amount type, but make sure it's in wei
   // TODO: figure out return type and how to deal with asynchrony and errors
-  public async stake(poolAddr: Address, amount: number) {
+  public async stake(poolAddr: Address, amount: number): Promise<void> {
     console.log(`${this.myAddr} wants to stake ${amount} ATS on pool ${poolAddr}`);
 
-    if (!await this.checkCanStakeNow()) {
+    if (!this.canStakeOrWithdrawNow) {
       return;
     }
 
     const txOpts = this.defaultTxOpts;
     txOpts.value = this.web3.utils.toWei(amount.toString());
-
-    try {
-      const gasEst = await this.stContract.methods.stake(poolAddr, 0).estimateGas(txOpts);
-    } catch (e) {
-      console.log(`estimating gas failed with ${e}`);
-    }
 
     try {
       // amount is ignored
@@ -220,6 +226,80 @@ export default class Context {
       console.log(`failed with ${e}`);
     }
   }
+
+  /** withraw the given amount (in ATS) from the given pool (identified by staking address)
+   *
+   * A withdrawal can happen in 2 ways:
+   * a) If the given pool is in the current or in the next validator set, withdraw() "orders" a withdrawal.
+   *    The given amount is then available to be "claimed" (additional transaction) from the next epoch onward.
+   * b) If the given pool is NOT in the current or in the next validator set, withdraw() already transfers the
+   *    given amount to the staking address - no second step needed.
+   *
+   * This method automatically determines and executes the right smart contract method to be used.
+   * It's up to the caller to claim ordered withdrawals at a later time if needed.
+   *
+   * TODO: deal with frozen stakes due to banned pools
+   *
+   * @param poolAddr: address of the pool from which to withdraw part or all of the stake
+   * @param amount: the amount to be withdrawn (in ATS units). Needs to be <= the current stake in that pool
+   *
+   * @return true if a consecutive claim transaction is needed in order to transfer the requested amount
+   */
+  // TODO: refactor to reduce redundancy with method stake()
+  public async withdraw(poolAddr: Address, amount: number): Promise<boolean> {
+    console.log(`${this.myAddr} wants to withdraw ${amount} ATS from pool ${poolAddr}`);
+
+    console.assert(this.canStakeOrWithdrawNow, 'withdraw currently not allowed');
+
+    const txOpts = this.defaultTxOpts;
+    const amountWeiBN: BN = this.web3.utils.toWei(new BN(amount));
+
+    // determine available withdraw method and allowed amount
+    const maxWithdrawAmount = await this.stContract.methods.maxWithdrawAllowed(poolAddr, this.myAddr).call();
+    const maxWithdrawOrderAmount = await this.stContract.methods.maxWithdrawOrderAllowed(poolAddr, this.myAddr).call();
+    console.assert(maxWithdrawAmount === '0' || maxWithdrawOrderAmount === '0', 'max withdraw amount assumption violated');
+
+    try {
+      if (maxWithdrawAmount !== '0') {
+        console.assert(new BN(maxWithdrawAmount).gte(amountWeiBN), 'requested withdraw amount exceeds max');
+        const receipt = await this.stContract.methods.withdraw(poolAddr, amountWeiBN.toString()).send(txOpts);
+        console.log(`tx ${receipt.transactionHash} for withdraw(): block ${receipt.blockNumber}, ${receipt.gasUsed} gas`);
+      } else {
+        console.assert(new BN(maxWithdrawOrderAmount).gte(amountWeiBN), 'requested withdraw order amount exceeds max');
+        const receipt = await this.stContract.methods.orderWithdraw(poolAddr, amountWeiBN.toString()).send(txOpts);
+        console.log(`tx ${receipt.transactionHash} for orderWithdraw(): block ${receipt.blockNumber}, ${receipt.gasUsed} gas`);
+        return true;
+      }
+    } catch (e) {
+      console.log(`failed with ${e}`);
+    }
+    return false;
+  }
+
+  /** claims a previously ordered withdraw, triggering transfer of the full available amount
+   * It's the caller's responsibility to determine if there's something to be claimed before calling this method.
+   */
+  public async claim(poolAddr: Address): Promise<void> {
+    console.log(`${this.myAddr} wants to claim from pool ${poolAddr}`);
+    console.assert(this.canStakeOrWithdrawNow, 'withdraw currently not allowed');
+    const txOpts = this.defaultTxOpts;
+
+    try {
+      const receipt = await this.stContract.methods.claimOrderedWithdraw(poolAddr).send(txOpts);
+      console.log(`tx ${receipt.transactionHash} for claimOrderedWithdraw(): block ${receipt.blockNumber}, ${receipt.gasUsed} gas`);
+    } catch (e) {
+      console.log(`failed with ${e}`);
+    }
+  }
+
+  // await context.stContract.methods.maxWithdrawOrderAllowed("0x0b2F5E2f3cbd864eAA2c642e3769c1582361CAF6", "0x32E4E4c7c5d1CEa5db5F9202a9E4D99E56c91a24").call()
+  // await context.stContract.methods.orderedWithdrawAmount("0x0b2F5E2f3cbd864eAA2c642e3769c1582361CAF6", "0x32E4E4c7c5d1CEa5db5F9202a9E4D99E56c91a24").call()
+
+  // await context.stContract.methods.orderWithdraw("0x0b2F5E2f3cbd864eAA2c642e3769c1582361CAF6", "2000000000000000000").send({from: "0x32E4E4c7c5d1CEa5db5F9202a9E4D99E56c91a24"})
+  // await context.stContract.methods.claimOrderedWithdraw("0x0b2F5E2f3cbd864eAA2c642e3769c1582361CAF6").send({from: "0x32E4E4c7c5d1CEa5db5F9202a9E4D99E56c91a24"})
+
+  // await context.stContract.methods.orderWithdrawEpoch("0x0b2F5E2f3cbd864eAA2c642e3769c1582361CAF6", "0x32E4E4c7c5d1CEa5db5F9202a9E4D99E56c91a24").call({from: "0x32E4E4c7c5d1CEa5db5F9202a9E4D99E56c91a24"})
+
 
   // ============================= PRIVATE INTERFACE ==================================
 
@@ -290,6 +370,12 @@ export default class Context {
       const candidateStake: string = await this.stContract.methods.stakeAmount(stakingAddress, stakingAddress).call();
       const totalStake: string = await this.stContract.methods.stakeAmountTotal(stakingAddress).call();
       const myStake: string = await this.stContract.methods.stakeAmount(stakingAddress, this.myAddr).call();
+      const claimable = {
+        amount: await this.stContract.methods.orderedWithdrawAmount(stakingAddress, this.myAddr).call(),
+        unlockEpoch: parseInt(await this.stContract.methods.orderWithdrawEpoch(stakingAddress, this.myAddr).call()) + 1,
+        // this lightweigt solution works, but will not trigger an update by itself when its value changes
+        canClaimNow: () => claimable.amount.asNumber() > 0 && claimable.unlockEpoch <= this.stakingEpoch,
+      };
       const delegatorAddrs: Array<string> = await this.stContract.methods.poolDelegators(stakingAddress).call();
       this.pools.push({
         miningAddress,
@@ -298,13 +384,16 @@ export default class Context {
         candidateStake,
         totalStake,
         myStake,
+        claimable,
         delegators: delegatorAddrs.map((da) => ({ address: da })),
         isMe: stakingAddress === this.myAddr,
       });
     });
   }
 
-  private async updateCurrentValidators() {
+  // flags pools in the current validator set.
+  // TODO: make this more robust (currently depends on assumption about the order of event handling)
+  private async updateCurrentValidators(): Promise<void> {
     const newCurrentValidators = (await this.vsContract.methods.getValidators().call()).sort();
     // make sure both arrays were sorted beforehand
     if (this.currentValidators.toString() !== newCurrentValidators.toString()) {
@@ -312,6 +401,7 @@ export default class Context {
       this.currentValidators = newCurrentValidators;
       // update pools accordingly
       this.pools.forEach((p) => {
+        console.log(`updating validator state for ${p.stakingAddress}`);
         p.isCurrentValidator = newCurrentValidators.indexOf(p.miningAddress) >= 0;
       });
     }
@@ -336,8 +426,11 @@ export default class Context {
       this.stakingAllowedTimeframe = -blocksLeftInEpoch;
     }
 
+    // TODO: due to the use of 2 different web3 instances, this bool may not always match stakingAllowedTimeframe
+    this.canStakeOrWithdrawNow = await this.stContract.methods.areStakeAndWithdrawAllowed().call();
+
     // TODO: don't do this in every block. There's no event we can rely on, but we can be smarter than this
-    this.updateCurrentValidators();
+    await this.updateCurrentValidators();
   }
 
   private handledStEvents = new Set<number>();
