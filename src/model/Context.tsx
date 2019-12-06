@@ -159,7 +159,6 @@ export default class Context {
     return ctx;
   }
 
-  // TODO: so, it's ok to have a getter method without the associated field declared? Or is that mobx specific?
   @computed get myPool(): IPool | undefined {
     return this.pools.filter((p) => p.stakingAddress === this.myAddr)[0];
   }
@@ -379,7 +378,7 @@ export default class Context {
       const delegatorAddrs: Array<string> = await this.stContract.methods.poolDelegators(stakingAddress).call();
       this.pools.push({
         miningAddress,
-        isCurrentValidator: false,
+        isCurrentValidator: this.isCurrentValidator(miningAddress),
         stakingAddress,
         candidateStake,
         totalStake,
@@ -405,6 +404,11 @@ export default class Context {
         p.isCurrentValidator = newCurrentValidators.indexOf(p.miningAddress) >= 0;
       });
     }
+  }
+
+  // returns true if the given pool is in the current ValidatorSet
+  private isCurrentValidator(miningAddr: Address): boolean {
+    return this.currentValidators.indexOf(miningAddr) >= 0;
   }
 
   private async handleNewBlock(web3Instance: any, blockHeader: any): Promise<void> {
