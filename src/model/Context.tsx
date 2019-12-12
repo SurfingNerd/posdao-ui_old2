@@ -7,6 +7,7 @@ import BN from 'bn.js';
 import { computed, observable } from 'mobx';
 import * as ValidatorSetBuildfile from '../contracts/ValidatorSetAuRa.json';
 import * as StakingBuildfile from '../contracts/StakingAuRaCoins.json';
+import * as BlockRewardBuildfile from '../contracts/BlockRewardAuRaCoins.json';
 // import Amount from './Amount';
 // import { Pool } from './Pool';
 // TODO: this is likely not working because of https://github.com/ethereum-ts/TypeChain/issues/187
@@ -16,6 +17,7 @@ import * as StakingBuildfile from '../contracts/StakingAuRaCoins.json';
 declare global {
   interface Window {
     ethereum: any;
+    web3: any;
   }
 }
 
@@ -33,11 +35,11 @@ declare global {
   }
 }
 
+/*
 interface IAmount {
   fromWei(): number; // in ATS units
 }
 
-/*
 type Amount = string & IAmount;
 
 class AmountHelper extends String implements IAmount {
@@ -58,7 +60,8 @@ a.fromWei();
 // TODO: can this be added to the Amount type only (instead of String) without complicating usage?
 // eslint-disable-next-line no-extend-native
 String.prototype.print = function (this: string) {
-  return this.asNumber().toFixed(3);
+  const nr = this.asNumber();
+  return Math.trunc(nr) === nr ? nr.toString() : nr.toFixed(2);
 };
 // eslint-disable-next-line no-extend-native
 String.prototype.asNumber = function (this: string) {
@@ -95,13 +98,16 @@ export interface IPool {
   candidateStake: Amount;
   totalStake: Amount;
   myStake: Amount;
-  claimable: {
+  claimableStake: {
     amount: Amount;
     unlockEpoch: number;
     canClaimNow(): boolean;
   };
   delegators: Array<IDelegator>; // TODO: how to cast to Array<IDelegator> ?
   isMe: boolean;
+  validatorStakeShare: number; // percent
+  validatorRewardShare: number; // percent
+  claimableReward: Amount;
 }
 
 // TODO: dry-run / estimate gas before sending actual transactions
@@ -143,6 +149,9 @@ export default class Context {
 
     ctx.web3 = new Web3(window.ethereum);
     ctx.myAddr = ctx.web3.utils.toChecksumAddress((await window.ethereum.enable())[0]);
+
+    // debug
+    window.web3 = ctx.web3;
 
     window.ethereum.on('accountsChanged', (accounts: any) => {
       alert(`metamask account changed to ${accounts}. You may want to reload...`);
@@ -186,6 +195,7 @@ export default class Context {
 
   // creates a pool for the currently connected account (account address becomes staking address)
   // TODO: figure out return type and how to deal with asynchrony and errors
+  // TODO: check if addresses already in ValidatorSet contract (thus "burned") before trying to add
   public async createPool(miningKeyAddr: Address): Promise<void> {
     if (!this.canStakeOrWithdrawNow) {
       return;
@@ -278,8 +288,8 @@ export default class Context {
   /** claims a previously ordered withdraw, triggering transfer of the full available amount
    * It's the caller's responsibility to determine if there's something to be claimed before calling this method.
    */
-  public async claim(poolAddr: Address): Promise<void> {
-    console.log(`${this.myAddr} wants to claim from pool ${poolAddr}`);
+  public async claimStake(poolAddr: Address): Promise<void> {
+    console.log(`${this.myAddr} wants to claim the available stake from pool ${poolAddr}`);
     console.assert(this.canStakeOrWithdrawNow, 'withdraw currently not allowed');
     const txOpts = this.defaultTxOpts;
 
@@ -291,6 +301,27 @@ export default class Context {
     }
   }
 
+  /**
+   * Claims the collected block reward from the given pool
+   */
+  public async claimReward(poolAddr: Address): Promise<void> {
+    console.log(`${this.myAddr} wants to claim the available reward from pool ${poolAddr}`);
+    const txOpts = this.defaultTxOpts;
+
+    try {
+      // TODO: this can eventually run out of gas (after too many epochs), then needs to be broken down into multiple txs
+      const receipt = await this.stContract.methods.claimReward([], poolAddr).send(txOpts);
+      console.log(`tx ${receipt.transactionHash} for claimReward(): block ${receipt.blockNumber}, ${receipt.gasUsed} gas`);
+    } catch (e) {
+      console.log(`failed with ${e}`);
+    }
+  }
+
+  // await context.stContract.methods.getRewardAmount([], "0xaa94b687d3f9552a453B81b2834cA53778980dC0", "0xaa94b687d3f9552a453B81b2834cA53778980dC0").call()
+  // context.stContract.methods.claimReward([], "0x0b2F5E2f3cbd864eAA2c642e3769c1582361CAF6").send({from: "0x0b2F5E2f3cbd864eAA2c642e3769c1582361CAF6"})
+  // web3.utils.fromWei(await web3.eth.getBalance(context.brContract._address))
+
+
   // ============================= PRIVATE INTERFACE ==================================
 
   // connection provided via Metamask.
@@ -301,9 +332,11 @@ export default class Context {
   private web3WS: Web3;
 
   // TODO: find better names for the contract instances
-  private vsContract: any;
+  private vsContract: any; // ValidatorSet
 
-  private stContract: any;
+  private stContract: any; // Staking
+
+  private brContract: any; // BlockReward
 
   private stakingEpochEndBlock = -1;
 
@@ -326,6 +359,8 @@ export default class Context {
       this.vsContract = new this.web3.eth.Contract((ValidatorSetBuildfile.abi as any), validatorSetContractAddress);
       const stAddress = await this.vsContract.methods.stakingContract().call();
       this.stContract = new this.web3.eth.Contract((StakingBuildfile.abi as any), stAddress);
+      const brAddress = await this.vsContract.methods.blockRewardContract().call();
+      this.brContract = new this.web3.eth.Contract((BlockRewardBuildfile.abi as any), brAddress);
     } catch (e) {
       console.log(`initializing contracts failed: ${e}`);
       throw e;
@@ -360,24 +395,33 @@ export default class Context {
       const candidateStake: string = await this.stContract.methods.stakeAmount(stakingAddress, stakingAddress).call();
       const totalStake: string = await this.stContract.methods.stakeAmountTotal(stakingAddress).call();
       const myStake: string = await this.stContract.methods.stakeAmount(stakingAddress, this.myAddr).call();
-      const claimable = {
+      const claimableStake = {
         amount: await this.stContract.methods.orderedWithdrawAmount(stakingAddress, this.myAddr).call(),
         unlockEpoch: parseInt(await this.stContract.methods.orderWithdrawEpoch(stakingAddress, this.myAddr).call()) + 1,
         // this lightweigt solution works, but will not trigger an update by itself when its value changes
-        canClaimNow: () => claimable.amount.asNumber() > 0 && claimable.unlockEpoch <= this.stakingEpoch,
+        canClaimNow: () => claimableStake.amount.asNumber() > 0 && claimableStake.unlockEpoch <= this.stakingEpoch,
       };
       const delegatorAddrs: Array<string> = await this.stContract.methods.poolDelegators(stakingAddress).call();
-      this.pools.push({
+
+      // getRewardAmount() fails if invoked for a staker without stake in the pool, thus we check that beforehand
+      const hasStake: boolean = stakingAddress === this.myAddr ? true : (await this.stContract.methods.stakeFirstEpoch(stakingAddress, this.myAddr).call()) !== '0';
+      const claimableReward = hasStake ? await this.stContract.methods.getRewardAmount([], stakingAddress, this.myAddr).call() : '0';
+
+      const newPool = {
         miningAddress,
         isCurrentValidator: this.isCurrentValidator(miningAddress),
         stakingAddress,
         candidateStake,
         totalStake,
         myStake,
-        claimable,
-        delegators: delegatorAddrs.map((da) => ({ address: da })),
+        claimableStake,
+        delegators: delegatorAddrs.map((addr) => ({ address: addr })),
         isMe: stakingAddress === this.myAddr,
-      });
+        validatorRewardShare: await this.getValidatorRewardShare(stakingAddress),
+        validatorStakeShare: await this.getValidatorStakeShare(miningAddress),
+        claimableReward,
+      };
+      this.pools.push(newPool);
     });
   }
 
@@ -397,6 +441,24 @@ export default class Context {
     }
   }
 
+  private async getValidatorStakeShare(miningAddr: Address): Promise<number> {
+    const validatorStakeAmount: Amount = await this.brContract.methods.snapshotPoolValidatorStakeAmount(this.stakingEpoch, miningAddr).call();
+    const totalStakeAmount: Amount = await this.brContract.methods.snapshotPoolTotalStakeAmount(this.stakingEpoch, miningAddr).call();
+    return (validatorStakeAmount.asNumber() * 100) / totalStakeAmount.asNumber();
+  }
+
+  private async getValidatorRewardShare(stakingAddr: Address): Promise<number> {
+    return parseInt(await this.brContract.methods.validatorRewardPercent(stakingAddr).call()) / 10000;
+  }
+
+  private async handleNewEpoch(): Promise<void> {
+    console.log(`new epoch: ${this.stakingEpoch}`);
+    await this.pools.forEach(async (pool) => {
+      pool.validatorStakeShare = await this.getValidatorStakeShare(pool.miningAddress);
+      pool.validatorRewardShare = await this.getValidatorRewardShare(pool.stakingAddress);
+    });
+  }
+
   // returns true if the given pool is in the current ValidatorSet
   private isCurrentValidator(miningAddr: Address): boolean {
     return this.currentValidators.indexOf(miningAddr) >= 0;
@@ -409,8 +471,13 @@ export default class Context {
     if (this.currentBlockNumber > this.stakingEpochEndBlock) {
       console.log(`updating stakingEpochEndBlock at block ${this.currentBlockNumber}`);
       this.stakingEpochEndBlock = await this.stContract.methods.stakingEpochEndBlock().call();
-      this.stakingEpoch = await this.stContract.methods.stakingEpoch().call();
+      const newStakingEpoch = parseInt(await this.stContract.methods.stakingEpoch().call());
+      if (newStakingEpoch !== this.stakingEpoch) {
+        this.stakingEpoch = newStakingEpoch;
+        await this.handleNewEpoch();
+      }
     }
+
     const blocksLeftInEpoch = this.stakingEpochEndBlock - this.currentBlockNumber;
     if (blocksLeftInEpoch < 0) {
       // TODO: we should have a contract instance connected via websocket in order to avoid this delay

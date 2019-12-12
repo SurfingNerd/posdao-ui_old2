@@ -75,31 +75,42 @@ export default class PoolView extends React.Component<PoolViewProps, {}> {
   }
 
   @action.bound
-  private async handleClaimButton(): Promise<void> {
+  private async handleClaimStakeButton(): Promise<void> {
     this.processing = true;
     const { context, pool } = this.props;
     if (!context.canStakeOrWithdrawNow) {
       alert('outside staking/withdraw time window');
     } else {
-      await context.claim(pool.stakingAddress);
+      await context.claimStake(pool.stakingAddress);
     }
+    this.processing = false;
+  }
+
+  @action.bound
+  private async handleClaimRewardButton(): Promise<void> {
+    this.processing = true;
+    const { context, pool } = this.props;
+
+    await context.claimReward(pool.stakingAddress);
+
     this.processing = false;
   }
 
   public render(): ReactNode {
     const { pool } = this.props;
     // TODO: find better classes for switching color
-    const stakingAddressClass = pool.isMe ? 'text-primary' : '';
+    const stakingAddressClass = `text-monospace ${pool.isMe ? ' text-primary' : ''}`;
     const miningAddressClass = pool.isCurrentValidator ? 'text-success' : '';
     return (
       <tr>
         <td className={stakingAddressClass}>{pool.stakingAddress}</td>
-        <td className={miningAddressClass}>{pool.miningAddress}</td>
+        {/* <td className={miningAddressClass}><small>{pool.miningAddress}</small></td> */}
+        <td>{Number.isNaN(pool.validatorStakeShare) ? '-' : Math.round(pool.validatorStakeShare)} / {Math.round(pool.validatorRewardShare)}</td>
         <td>{pool.delegators.length}</td>
-        <td>{pool.candidateStake.asNumber()}</td>
-        <td>{pool.totalStake.asNumber()}</td>
-        <td className={`${pool.myStake.asNumber() > 0 ? 'text-primary' : ''}`}>{pool.myStake.asNumber()}</td>
-        <td className={`${pool.claimable.canClaimNow() ? 'text-primary' : 'text-secondary'}`}>{pool.claimable.amount.asNumber()}</td>
+        <td>{pool.candidateStake.print()}</td>
+        <td>{pool.totalStake.print()}</td>
+        <td className={`${pool.myStake.asNumber() > 0 ? 'text-primary' : ''}`}>{pool.myStake.print()}</td>
+        <td className={`${pool.claimableStake.canClaimNow() ? 'text-primary' : 'text-secondary'}`}>{pool.claimableStake.amount.print()}</td>
         <td>
           <input
             type="text"
@@ -113,7 +124,11 @@ export default class PoolView extends React.Component<PoolViewProps, {}> {
           </div>
           <button type="button" disabled={!this.buttonsEnabled} onClick={this.handleStakeButton}>Stake</button>
           <button type="button" disabled={!this.buttonsEnabled} onClick={this.handleWithdrawButton} hidden={pool.myStake.asNumber() === 0}>Withdraw</button>
-          <button type="button" disabled={!this.buttonsEnabled} onClick={this.handleClaimButton} hidden={!pool.claimable.canClaimNow()}>Claim</button>
+          <button type="button" disabled={!this.buttonsEnabled} onClick={this.handleClaimStakeButton} hidden={!pool.claimableStake.canClaimNow()}>Claim</button>
+        </td>
+        <td>{pool.claimableReward.print()}</td>
+        <td>
+          <button type="button" disabled={pool.claimableReward.asNumber() === 0} onClick={this.handleClaimRewardButton}>Claim</button>
         </td>
       </tr>
     );
