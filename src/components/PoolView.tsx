@@ -105,7 +105,7 @@ export default class PoolView extends React.Component<PoolViewProps, {}> {
       <tr>
         <td className={stakingAddressClass}>{pool.stakingAddress}</td>
         {/* <td className={miningAddressClass}><small>{pool.miningAddress}</small></td> */}
-        <td>{Number.isNaN(pool.validatorStakeShare) ? '-' : Math.round(pool.validatorStakeShare)} / {Math.round(pool.validatorRewardShare)}</td>
+        <td>{Number.isNaN(pool.validatorStakeShare) ? '-' : Math.round(pool.validatorStakeShare)} / {(pool.validatorRewardShare === 0) ? '-' : Math.round(pool.validatorRewardShare)}</td>
         <td>{pool.delegators.length}</td>
         <td>{pool.candidateStake.print()}</td>
         <td>{pool.totalStake.print()}</td>

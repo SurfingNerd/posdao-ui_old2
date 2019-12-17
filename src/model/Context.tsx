@@ -403,10 +403,6 @@ export default class Context {
       };
       const delegatorAddrs: Array<string> = await this.stContract.methods.poolDelegators(stakingAddress).call();
 
-      // getRewardAmount() fails if invoked for a staker without stake in the pool, thus we check that beforehand
-      const hasStake: boolean = stakingAddress === this.myAddr ? true : (await this.stContract.methods.stakeFirstEpoch(stakingAddress, this.myAddr).call()) !== '0';
-      const claimableReward = hasStake ? await this.stContract.methods.getRewardAmount([], stakingAddress, this.myAddr).call() : '0';
-
       const newPool = {
         miningAddress,
         isCurrentValidator: this.isCurrentValidator(miningAddress),
@@ -419,7 +415,7 @@ export default class Context {
         isMe: stakingAddress === this.myAddr,
         validatorRewardShare: await this.getValidatorRewardShare(stakingAddress),
         validatorStakeShare: await this.getValidatorStakeShare(miningAddress),
-        claimableReward,
+        claimableReward: await this.getClaimableReward(stakingAddress),
       };
       this.pools.push(newPool);
     });
@@ -451,11 +447,18 @@ export default class Context {
     return parseInt(await this.brContract.methods.validatorRewardPercent(stakingAddr).call()) / 10000;
   }
 
+  private async getClaimableReward(stakingAddr: Address): Promise<Amount> {
+    // getRewardAmount() fails if invoked for a staker without stake in the pool, thus we check that beforehand
+    const hasStake: boolean = stakingAddr === this.myAddr ? true : (await this.stContract.methods.stakeFirstEpoch(stakingAddr, this.myAddr).call()) !== '0';
+    return hasStake ? this.stContract.methods.getRewardAmount([], stakingAddr, this.myAddr).call() : '0';
+  }
+
   private async handleNewEpoch(): Promise<void> {
     console.log(`new epoch: ${this.stakingEpoch}`);
     await this.pools.forEach(async (pool) => {
       pool.validatorStakeShare = await this.getValidatorStakeShare(pool.miningAddress);
       pool.validatorRewardShare = await this.getValidatorRewardShare(pool.stakingAddress);
+      pool.claimableReward = await this.getClaimableReward(pool.stakingAddress);
     });
   }
 
@@ -464,10 +467,12 @@ export default class Context {
     return this.currentValidators.indexOf(miningAddr) >= 0;
   }
 
+  // does relevant state updates and checks if the epoch changed
   private async handleNewBlock(web3Instance: any, blockHeader: any): Promise<void> {
     this.currentBlockNumber = blockHeader.number;
     this.myBalance = await web3Instance.eth.getBalance(this.myAddr);
 
+    // epoch change
     if (this.currentBlockNumber > this.stakingEpochEndBlock) {
       console.log(`updating stakingEpochEndBlock at block ${this.currentBlockNumber}`);
       this.stakingEpochEndBlock = await this.stContract.methods.stakingEpochEndBlock().call();

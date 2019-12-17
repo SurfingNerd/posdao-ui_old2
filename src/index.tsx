@@ -17,19 +17,18 @@ ReactDOM.render(
 // debug
 declare let window: any;
 
-try {
-  Context.initialize(rpcUrl, validatorSetContractAddress).then((ctx) => {
+Context.initialize(rpcUrl, validatorSetContractAddress)
+  .then((ctx) => {
     // debug
     window.context = ctx;
 
     ReactDOM.render(
-      <App context={ctx}/>,
+      <App context={ctx} />,
       document.getElementById('root'),
     );
+  }).catch((err) => {
+    alert(`initializing failed: ${err}`);
   });
-} catch (e) {
-  alert(`initializing failed: ${e}`);
-}
 
 // If you want your app to work offline and load faster, you can change
 // unregister() to register() below. Note this comes with some pitfalls.
