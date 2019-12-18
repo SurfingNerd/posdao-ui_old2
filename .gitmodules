@@ -1,0 +1,4 @@
+[submodule "posdao-contracts"]
+	path = posdao-contracts
+	url = https://github.com/lab10-coop/posdao-contracts/
+	branch = dh-staking-ui
