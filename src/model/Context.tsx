@@ -138,9 +138,9 @@ export default class Context {
 
   // TODO: properly implement singleton pattern
   // eslint-disable-next-line max-len
-  public static async initialize(rpcUrl: URL, validatorSetContractAddress: Address): Promise<Context> {
+  public static async initialize(wsUrl: URL, validatorSetContractAddress: Address): Promise<Context> {
     const ctx = new Context();
-    ctx.web3WS = new Web3(rpcUrl.toString());
+    ctx.web3WS = new Web3(wsUrl.toString());
 
     // doc: https://metamask.github.io/metamask-docs/API_Reference/Ethereum_Provider
     if (!window.ethereum) {
