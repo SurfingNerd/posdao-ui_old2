@@ -236,6 +236,30 @@ export default class Context {
     }
   }
 
+  /**
+   * Allows stakes to be moved to another pool in a single transaction (instead of withdraw() + stake())
+   * Available only while fromPool is NOT in the validator set AND during staking epoch
+   */
+  public async moveStake(fromPoolAddr: Address, toPoolAddr: Address, amount: number): Promise<void> {
+    console.log(`${this.myAddr} wants to move ${amount} ATS from pool ${fromPoolAddr} to ${toPoolAddr}`);
+
+    if (!this.canStakeOrWithdrawNow) {
+      return;
+    }
+
+    const txOpts = this.defaultTxOpts;
+    const amountWei = this.web3.utils.toWei(amount.toString());
+
+    try {
+      // amount is ignored
+      const receipt = await this.stContract.methods.moveStake(fromPoolAddr, toPoolAddr, amountWei).send(txOpts);
+      // console.log(`receipt: ${JSON.stringify(receipt, null, 2)}`);
+      console.log(`tx ${receipt.transactionHash} for moveStake(): block ${receipt.blockNumber}, ${receipt.gasUsed} gas`);
+    } catch (e) {
+      console.log(`failed with ${e}`);
+    }
+  }
+
   /** withraw the given amount (in ATS) from the given pool (identified by staking address)
    *
    * A withdrawal can happen in 2 ways:
