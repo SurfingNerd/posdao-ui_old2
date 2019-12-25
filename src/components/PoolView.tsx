@@ -100,7 +100,7 @@ export default class PoolView extends React.Component<PoolViewProps, {}> {
     const { pool } = this.props;
     // TODO: find better classes for switching color
     const stakingAddressClass = `text-monospace ${pool.isMe ? ' text-primary' : ''}`;
-    const miningAddressClass = pool.isCurrentValidator ? 'text-success' : '';
+    // const miningAddressClass = pool.isCurrentValidator ? 'text-success' : '';
     return (
       <tr>
         <td className={stakingAddressClass} title={`mining address: ${pool.miningAddress}`}>{pool.stakingAddress}</td>
