@@ -32,6 +32,7 @@ declare global {
   interface String {
     print(): string; // in ATS units
     asNumber(): number; // in ATS units
+    isAddress(): boolean
   }
 }
 
@@ -68,6 +69,12 @@ String.prototype.asNumber = function (this: string) {
   const web3 = new Web3();
   return parseFloat(web3.utils.fromWei(this));
 };
+// eslint-disable-next-line no-extend-native
+String.prototype.isAddress = function (this: string) {
+  const web3 = new Web3();
+  return web3.utils.isAddress(this);
+};
+
 type Amount = string;
 
 interface IDelegator {
@@ -193,16 +200,32 @@ export default class Context {
   }
   */
 
-  // creates a pool for the currently connected account (account address becomes staking address)
-  // TODO: figure out return type and how to deal with asynchrony and errors
-  // TODO: check if addresses already in ValidatorSet contract (thus "burned") before trying to add
-  public async createPool(miningKeyAddr: Address): Promise<void> {
+  // checks if the given addresses can be used for creating a pool
+  public async areAddressesValidForCreatePool(stakingAddr: Address, miningAddr: Address): Promise<boolean> {
+    // same checks as in ValidatorSet._setStakingAddress()
+    return (
+      stakingAddr !== miningAddr
+      && await this.vsContract.methods.miningByStakingAddress(stakingAddr).call() === '0x0000000000000000000000000000000000000000'
+      && await this.vsContract.methods.miningByStakingAddress(miningAddr).call() === '0x0000000000000000000000000000000000000000'
+      && await this.vsContract.methods.stakingByMiningAddress(stakingAddr).call() === '0x0000000000000000000000000000000000000000'
+      && await this.vsContract.methods.stakingByMiningAddress(miningAddr).call() === '0x0000000000000000000000000000000000000000'
+    );
+  }
+
+  /** creates a pool for the sender account, making the sender account a posdao "candidate"
+   * The caller is responsible for parameter validity, checking sender balance etc.
+   * @parm initialStake amount (in ATS) of initial candidate stake
+   * TODO: figure out return type and how to deal with asynchrony and errors
+   */
+  public async createPool(miningKeyAddr: Address, initialStake: number): Promise<void> {
+    console.log(`${this.myAddr} wants to add Pool with initial stake ${initialStake}`);
+
     if (!this.canStakeOrWithdrawNow) {
       return;
     }
 
     const txOpts = this.defaultTxOpts;
-    txOpts.value = this.candidateMinStake;
+    txOpts.value = this.web3.utils.toWei(initialStake.toString());
 
     try {
       // <amount> argument is ignored by the contract (exists for chains with token based staking)

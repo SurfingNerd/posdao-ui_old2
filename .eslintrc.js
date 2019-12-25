@@ -53,5 +53,8 @@ module.exports = {
 
       // allows to be a bit more concise, yet explicit
       'no-return-assign': ['warn', 'except-parens'],
+
+      // disabled because it complains where there's no reason for complaining
+      'jsx-a11y/label-has-associated-control': 0,
     },
   };
