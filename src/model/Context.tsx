@@ -8,8 +8,6 @@ import { computed, observable } from 'mobx';
 import * as ValidatorSetBuildfile from '../contracts/ValidatorSetAuRa.json';
 import * as StakingBuildfile from '../contracts/StakingAuRaCoins.json';
 import * as BlockRewardBuildfile from '../contracts/BlockRewardAuRaCoins.json';
-// import Amount from './Amount';
-// import { Pool } from './Pool';
 // TODO: this is likely not working because of https://github.com/ethereum-ts/TypeChain/issues/187
 // import * as TestAbi from '../abis/ValidatorSetAuRa.d';
 
@@ -36,28 +34,6 @@ declare global {
   }
 }
 
-/*
-interface IAmount {
-  fromWei(): number; // in ATS units
-}
-
-type Amount = string & IAmount;
-
-class AmountHelper extends String implements IAmount {
-  public fromWei(this: Amount): number {
-    const web3 = new Web3();
-
-    return parseFloat(web3.utils.fromWei(this));
-  }
-  public static init(amount: string | number): Amount {
-    return new AmountHelper(amount) as Amount;
-  }
-}
-
-const a: Amount = AmountHelper.init('123');
-a.fromWei();
- */
-
 // TODO: can this be added to the Amount type only (instead of String) without complicating usage?
 // eslint-disable-next-line no-extend-native
 String.prototype.print = function (this: string) {
@@ -80,20 +56,6 @@ type Amount = string;
 interface IDelegator {
   address: Address;
 }
-
-// TODO: should it be done this way?
-/*
-class Address extends String {
-    constructor(addr: string) {
-        // TODO: this is ugly. How to do better?
-        const web3 = new Web3();
-        if(! Web3.utils.isAddress(addr)) {
-            throw TypeError('not a valid Ethereum address');
-        }
-        super(web3.utils.toChecksumAddress(addr));
-    }
-}
- */
 
 // TODO: be consistent about type (string vs BN vs number) and unit (ATS vs wei) for amounts
 
@@ -363,11 +325,6 @@ export default class Context {
       console.log(`failed with ${e}`);
     }
   }
-
-  // await context.stContract.methods.getRewardAmount([], "0xaa94b687d3f9552a453B81b2834cA53778980dC0", "0xaa94b687d3f9552a453B81b2834cA53778980dC0").call()
-  // context.stContract.methods.claimReward([], "0x0b2F5E2f3cbd864eAA2c642e3769c1582361CAF6").send({from: "0x0b2F5E2f3cbd864eAA2c642e3769c1582361CAF6"})
-  // web3.utils.fromWei(await web3.eth.getBalance(context.brContract._address))
-
 
   // ============================= PRIVATE INTERFACE ==================================
 
