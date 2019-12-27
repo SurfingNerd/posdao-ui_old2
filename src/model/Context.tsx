@@ -63,6 +63,7 @@ interface IDelegator {
 export interface IPool {
   readonly stakingAddress: Address;
   miningAddress: Address;
+  addedInEpoch: number;
   isCurrentValidator: boolean;
   candidateStake: Amount;
   totalStake: Amount;
@@ -77,6 +78,9 @@ export interface IPool {
   validatorStakeShare: number; // percent
   validatorRewardShare: number; // percent
   claimableReward: Amount;
+  isBanned(): boolean;
+  bannedUntilEpoch: number;
+  banCount: number;
 }
 
 // TODO: dry-run / estimate gas before sending actual transactions
@@ -87,6 +91,8 @@ export default class Context {
 
   // in Ether (not wei!)
   @observable public myBalance: Amount = '';
+
+  public epochDuration = 0;
 
   public candidateMinStake: Amount = '';
 
@@ -318,7 +324,7 @@ export default class Context {
     const txOpts = this.defaultTxOpts;
 
     try {
-      // TODO: this can eventually run out of gas (after too many epochs), then needs to be broken down into multiple txs
+      // TODO: this can run out of gas (after too many epochs). Solution: break down into multiple txs
       const receipt = await this.stContract.methods.claimReward([], poolAddr).send(txOpts);
       console.log(`tx ${receipt.transactionHash} for claimReward(): block ${receipt.blockNumber}, ${receipt.gasUsed} gas`);
     } catch (e) {
@@ -375,13 +381,14 @@ export default class Context {
     // eslint-disable-next-line no-underscore-dangle
     console.log(`vs: ${this.vsContract._address}, st: ${this.stContract._address}, candidateMinStake: ${this.candidateMinStake}`);
 
+    this.epochDuration = await this.stContract.methods.stakingEpochDuration().call();
     this.stakingEpoch = await this.stContract.methods.stakingEpoch().call();
     this.stakingEpochEndBlock = await this.stContract.methods.stakingEpochEndBlock().call();
     this.stakeWithdrawDisallowPeriod = await this.stContract.methods.stakeWithdrawDisallowPeriod().call();
 
     await this.subscribeToEvents(this.web3WS);
 
-    this.syncPoolsState();
+    await this.syncPoolsState();
     // const testContract = new this.web3.eth.Contract(TestAbi, validatorSetContractAddress);
   }
 
@@ -390,8 +397,10 @@ export default class Context {
   // But for a start, this does the job.
   private async syncPoolsState() {
     this.pools = [];
-    const poolAddrs: Array<string> = await this.stContract.methods.getPools().call();
-    console.log(`fetched ${poolAddrs.length} pool addresses. Iterating...`);
+    const activePoolAddrs: Array<string> = await this.stContract.methods.getPools().call();
+    const inactivePoolAddrs: Array<string> = await this.stContract.methods.getPoolsInactive().call();
+    console.log(`syncing ${activePoolAddrs.length} active and ${inactivePoolAddrs.length} inactive pools...`);
+    const poolAddrs = activePoolAddrs.concat(inactivePoolAddrs);
     poolAddrs.forEach(async (stakingAddress) => {
       console.log(`checking pool ${stakingAddress}`);
       const miningAddress = await this.vsContract.methods.miningByStakingAddress(stakingAddress).call();
@@ -406,6 +415,9 @@ export default class Context {
         canClaimNow: () => claimableStake.amount.asNumber() > 0 && claimableStake.unlockEpoch <= this.stakingEpoch,
       };
       const delegatorAddrs: Array<string> = await this.stContract.methods.poolDelegators(stakingAddress).call();
+      const bannedUntilBlock = parseInt(await this.vsContract.methods.bannedUntil(miningAddress).call());
+      const banCount = await this.vsContract.methods.banCounter(miningAddress).call();
+      //const addedInEpoch =
 
       const newPool = {
         miningAddress,
@@ -420,6 +432,10 @@ export default class Context {
         validatorRewardShare: await this.getValidatorRewardShare(stakingAddress),
         validatorStakeShare: await this.getValidatorStakeShare(miningAddress),
         claimableReward: await this.getClaimableReward(stakingAddress),
+        bannedUntilEpoch: Math.ceil(bannedUntilBlock / this.epochDuration), // TODO: is rounding up what we want?
+        isBanned: () => bannedUntilBlock > this.currentBlockNumber,
+        banCount,
+        addedInEpoch: 0,
       };
       this.pools.push(newPool);
     });

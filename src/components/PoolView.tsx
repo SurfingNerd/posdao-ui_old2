@@ -98,12 +98,18 @@ export default class PoolView extends React.Component<PoolViewProps, {}> {
 
   public render(): ReactNode {
     const { pool } = this.props;
-    // TODO: find better classes for switching color
-    const stakingAddressClass = `text-monospace ${pool.isMe ? ' text-primary' : ''}`;
-    // const miningAddressClass = pool.isCurrentValidator ? 'text-success' : '';
+
+    let extraInfo = '';
+    if (pool.isBanned()) {
+      extraInfo += `banned until epoch ${pool.bannedUntilEpoch}`;
+    }
+
     return (
-      <tr>
-        <td className={stakingAddressClass} title={`mining address: ${pool.miningAddress}`}>{pool.stakingAddress}</td>
+      <tr className={`${pool.isBanned() ? 'banned-pool' : ''}`} title={extraInfo}>
+        <td>
+          <span className={`text-monospace ${pool.isMe ? ' text-primary' : ''}`}>{pool.stakingAddress}</span><br />
+          <small className="text-monospace-">(mining: {pool.miningAddress})</small>
+        </td>
         {/* <td className={miningAddressClass}><small>{pool.miningAddress}</small></td> */}
         <td>{Number.isNaN(pool.validatorStakeShare) ? '-' : Math.round(pool.validatorStakeShare)} / {(pool.validatorRewardShare === 0) ? '-' : Math.round(pool.validatorRewardShare)}</td>
         <td>{pool.delegators.length}</td>
