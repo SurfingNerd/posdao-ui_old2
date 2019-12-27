@@ -25,11 +25,11 @@
   "scripts": {
     "start": "react-scripts start",
     "build-contracts": "git submodule update --init && cd posdao-contracts && npm ci && npm run compile",
-    "build": "react-scripts build",
+    "build": "npm run typechain && react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
     "lint": "node_modules/.bin/eslint './src/!(abis)/**/*.{ts,tsx}'",
-    "make-abis": "node_modules/.bin/typechain --target web3-v1 --outDir src/abis/ 'posdao-contracts/build/contracts/**/*.json'"
+    "typechain": "node_modules/.bin/typechain --target web3-v1 --outDir src/contracts/ 'posdao-contracts/build/contracts/**/*.json'"
   },
   "browserslist": {
     "production": [

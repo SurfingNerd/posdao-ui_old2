@@ -5,12 +5,12 @@ import BN from 'bn.js';
 import { computed, observable } from 'mobx';
 import { BlockHeader } from 'web3-eth';
 import { AbiItem } from 'web3-utils';
-import { abi as ValidatorSetAbi } from '../contracts/ValidatorSetAuRa.json';
-import { abi as StakingAbi } from '../contracts/StakingAuRaCoins.json';
-import { abi as BlockRewardAbi } from '../contracts/BlockRewardAuRaCoins.json';
-import { ValidatorSetAuRa } from '../abis/ValidatorSetAuRa';
-import { StakingAuRaCoins } from '../abis/StakingAuRaCoins';
-import { BlockRewardAuRaCoins } from '../abis/BlockRewardAuRaCoins';
+import { abi as ValidatorSetAbi } from '../contract-abis/ValidatorSetAuRa.json';
+import { abi as StakingAbi } from '../contract-abis/StakingAuRaCoins.json';
+import { abi as BlockRewardAbi } from '../contract-abis/BlockRewardAuRaCoins.json';
+import { ValidatorSetAuRa } from '../contracts/ValidatorSetAuRa';
+import { StakingAuRaCoins } from '../contracts/StakingAuRaCoins';
+import { BlockRewardAuRaCoins } from '../contracts/BlockRewardAuRaCoins';
 
 // needed for querying injected web3 (e.g. from Metamask)
 declare global {
