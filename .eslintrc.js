@@ -27,8 +27,8 @@ module.exports = {
       // I don't like that being enforced
       'lines-between-class-members': 0,
 
-      // prevent HTML code in JSX from being stretched too much
-      'react/jsx-one-expression-per-line': [1, { 'allow': 'single-child' }],
+      // allow to stick to the HTML structure
+      'react/jsx-one-expression-per-line': 0,
 
       // allow interface names to have a leading I
       '@typescript-eslint/interface-name-prefix': 0,
@@ -56,5 +56,9 @@ module.exports = {
 
       // disabled because it complains where there's no reason for complaining
       'jsx-a11y/label-has-associated-control': 0,
+
+      '@typescript-eslint/explicit-function-return-type': ['warn', {
+        allowExpressions: true
+      }],
     },
   };

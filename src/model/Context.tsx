@@ -1,25 +1,27 @@
 // TODO: should this be .ts or .tsx ?
 
-// TODO: reduce use of "any" type
-
 import Web3 from 'web3';
 import BN from 'bn.js';
 import { computed, observable } from 'mobx';
-import * as ValidatorSetBuildfile from '../contracts/ValidatorSetAuRa.json';
-import * as StakingBuildfile from '../contracts/StakingAuRaCoins.json';
-import * as BlockRewardBuildfile from '../contracts/BlockRewardAuRaCoins.json';
-// TODO: this is likely not working because of https://github.com/ethereum-ts/TypeChain/issues/187
-// import * as TestAbi from '../abis/ValidatorSetAuRa.d';
+import { BlockHeader } from 'web3-eth';
+import { AbiItem } from 'web3-utils';
+import { abi as ValidatorSetAbi } from '../contracts/ValidatorSetAuRa.json';
+import { abi as StakingAbi } from '../contracts/StakingAuRaCoins.json';
+import { abi as BlockRewardAbi } from '../contracts/BlockRewardAuRaCoins.json';
+import { ValidatorSetAuRa } from '../abis/ValidatorSetAuRa';
+import { StakingAuRaCoins } from '../abis/StakingAuRaCoins';
+import { BlockRewardAuRaCoins } from '../abis/BlockRewardAuRaCoins';
 
 // needed for querying injected web3 (e.g. from Metamask)
 declare global {
   interface Window {
-    ethereum: any;
-    web3: any;
+    ethereum: Web3;
+    web3: Web3;
   }
 }
 
 // for debug
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 declare let window: any;
 window.BN = BN;
 
@@ -30,22 +32,22 @@ declare global {
   interface String {
     print(): string; // in ATS units
     asNumber(): number; // in ATS units
-    isAddress(): boolean
+    isAddress(): boolean;
   }
 }
 
 // TODO: can this be added to the Amount type only (instead of String) without complicating usage?
-// eslint-disable-next-line no-extend-native
+// eslint-disable-next-line no-extend-native,@typescript-eslint/explicit-function-return-type,func-names
 String.prototype.print = function (this: string) {
   const nr = this.asNumber();
   return Math.trunc(nr) === nr ? nr.toString() : nr.toFixed(2);
 };
-// eslint-disable-next-line no-extend-native
+// eslint-disable-next-line no-extend-native,@typescript-eslint/explicit-function-return-type,func-names
 String.prototype.asNumber = function (this: string) {
   const web3 = new Web3();
   return parseFloat(web3.utils.fromWei(this));
 };
-// eslint-disable-next-line no-extend-native
+// eslint-disable-next-line no-extend-native,@typescript-eslint/explicit-function-return-type,func-names
 String.prototype.isAddress = function (this: string) {
   const web3 = new Web3();
   return web3.utils.isAddress(this);
@@ -85,20 +87,21 @@ export interface IPool {
 
 // TODO: dry-run / estimate gas before sending actual transactions
 export default class Context {
-  @observable public currentBlockNumber = -1;
+  @observable public currentBlockNumber!: number;
 
-  @observable public myAddr: Address = '';
+  @observable public myAddr!: Address;
 
   // in Ether (not wei!)
-  @observable public myBalance: Amount = '';
+  // TODO: initializing to 0 is a lazy shortcut
+  @observable public myBalance: Amount = '0';
 
-  public epochDuration = 0;
+  public epochDuration!: number;
 
-  public candidateMinStake: Amount = '';
+  public candidateMinStake!: Amount;
 
-  public delegatorMinStake: Amount = '';
+  public delegatorMinStake!: Amount;
 
-  @observable public stakingEpoch = -1;
+  @observable public stakingEpoch!: number;
 
   // TODO: find better name
   @observable public canStakeOrWithdrawNow = false;
@@ -107,7 +110,7 @@ export default class Context {
   // negative value: allowed in n blocks
   @observable public stakingAllowedTimeframe = 0;
 
-  @observable public pools: IPool[] = [];
+  @observable public pools!: IPool[];
 
   @observable public currentValidators: Address[] = [];
 
@@ -128,11 +131,11 @@ export default class Context {
     // debug
     window.web3 = ctx.web3;
 
-    window.ethereum.on('accountsChanged', (accounts: any) => {
+    window.ethereum.on('accountsChanged', (accounts: Account[]) => {
       alert(`metamask account changed to ${accounts}. You may want to reload...`);
     });
 
-    window.ethereum.on('chainChanged', (chainId: any) => {
+    window.ethereum.on('chainChanged', (chainId: number) => {
       alert(`metamask chain changed to ${chainId}. You may want to reload...`);
     });
 
@@ -151,22 +154,6 @@ export default class Context {
   public get iHaveAPool(): boolean {
     return this.myPool !== undefined;
   }
-
-  // returns true if staking/withdrawing etc. are currently allowed
-  /*
-  public async canStakeOrWithdrawNow(): Promise<boolean> {
-    const canStake = await this.stContract.methods.areStakeAndWithdrawAllowed().call();
-    // We need to access stakingAllowedTimeframe in order to trigger an update when needed
-    if (this.stakingAllowedTimeframe > 0 && !canStake) {
-      console.log('state mismatch between stakingAllowedTimeframe and canStake()');
-    }
-    if (!canStake) {
-      console.log('staking season currently closed');
-      return false;
-    }
-    return true;
-  }
-  */
 
   // checks if the given addresses can be used for creating a pool
   public async areAddressesValidForCreatePool(stakingAddr: Address, miningAddr: Address): Promise<boolean> {
@@ -342,18 +329,18 @@ export default class Context {
   private web3WS: Web3;
 
   // TODO: find better names for the contract instances
-  private vsContract: any; // ValidatorSet
+  private vsContract!: ValidatorSetAuRa;
 
-  private stContract: any; // Staking
+  private stContract!: StakingAuRaCoins;
 
-  private brContract: any; // BlockReward
+  private brContract!: BlockRewardAuRaCoins;
 
   // TODO: we should probably get rid of either start or end block, can be calculated with epochDuration
-  private stakingEpochStartBlock = -1;
+  private stakingEpochStartBlock!: number;
 
-  private stakingEpochEndBlock = -1;
+  private stakingEpochEndBlock!: number;
 
-  private stakeWithdrawDisallowPeriod = -1;
+  private stakeWithdrawDisallowPeriod!: number;
 
   // <from> is set when initializing
   // TODO: anything else? Should we make it configurable?
@@ -369,11 +356,11 @@ export default class Context {
   private async initContracts(validatorSetContractAddress: Address): Promise<void> {
     try {
       // TODO: if a contract call fails, the stack trace doesn't show the actual line number.
-      this.vsContract = new this.web3.eth.Contract((ValidatorSetBuildfile.abi as any), validatorSetContractAddress);
+      this.vsContract = new this.web3.eth.Contract((ValidatorSetAbi as AbiItem[]), validatorSetContractAddress);
       const stAddress = await this.vsContract.methods.stakingContract().call();
-      this.stContract = new this.web3.eth.Contract((StakingBuildfile.abi as any), stAddress);
+      this.stContract = new this.web3.eth.Contract((StakingAbi as AbiItem[]), stAddress);
       const brAddress = await this.vsContract.methods.blockRewardContract().call();
-      this.brContract = new this.web3.eth.Contract((BlockRewardBuildfile.abi as any), brAddress);
+      this.brContract = new this.web3.eth.Contract((BlockRewardAbi as AbiItem[]), brAddress);
     } catch (e) {
       console.log(`initializing contracts failed: ${e}`);
       throw e;
@@ -381,25 +368,22 @@ export default class Context {
 
     this.candidateMinStake = await this.stContract.methods.candidateMinStake().call();
     this.delegatorMinStake = await this.stContract.methods.delegatorMinStake().call();
-    // eslint-disable-next-line no-underscore-dangle
-    console.log(`vs: ${this.vsContract._address}, st: ${this.stContract._address}, candidateMinStake: ${this.candidateMinStake}`);
 
     this.epochDuration = parseInt(await this.stContract.methods.stakingEpochDuration().call());
     this.stakingEpoch = parseInt(await this.stContract.methods.stakingEpoch().call());
     this.stakingEpochStartBlock = parseInt(await this.stContract.methods.stakingEpochStartBlock().call());
     this.stakingEpochEndBlock = parseInt(await this.stContract.methods.stakingEpochEndBlock().call());
-    this.stakeWithdrawDisallowPeriod = await this.stContract.methods.stakeWithdrawDisallowPeriod().call();
+    this.stakeWithdrawDisallowPeriod = parseInt(await this.stContract.methods.stakeWithdrawDisallowPeriod().call());
 
     await this.subscribeToEvents(this.web3WS);
 
     await this.syncPoolsState();
-    // const testContract = new this.web3.eth.Contract(TestAbi, validatorSetContractAddress);
   }
 
   // (re-)builds the data structure this.pools based on the current state on chain
   // This may become overkill in a busy system. It should be possible to do more fine-grained updates instead.
   // But for a start, this does the job.
-  private async syncPoolsState() {
+  private async syncPoolsState(): Promise<void> {
     this.pools = [];
     const activePoolAddrs: Array<string> = await this.stContract.methods.getPools().call();
     const inactivePoolAddrs: Array<string> = await this.stContract.methods.getPoolsInactive().call();
@@ -408,22 +392,24 @@ export default class Context {
     poolAddrs.forEach(async (stakingAddress) => {
       console.log(`checking pool ${stakingAddress}`);
       const miningAddress = await this.vsContract.methods.miningByStakingAddress(stakingAddress).call();
-      // TODO: does this return BN with typechain?
-      const candidateStake: string = await this.stContract.methods.stakeAmount(stakingAddress, stakingAddress).call();
-      const totalStake: string = await this.stContract.methods.stakeAmountTotal(stakingAddress).call();
-      const myStake: string = await this.stContract.methods.stakeAmount(stakingAddress, this.myAddr).call();
+      const candidateStake = await this.stContract.methods.stakeAmount(stakingAddress, stakingAddress).call();
+      const totalStake = await this.stContract.methods.stakeAmountTotal(stakingAddress).call();
+      const myStake = await this.stContract.methods.stakeAmount(stakingAddress, this.myAddr).call();
+
       const claimableStake = {
         amount: await this.stContract.methods.orderedWithdrawAmount(stakingAddress, this.myAddr).call(),
         unlockEpoch: parseInt(await this.stContract.methods.orderWithdrawEpoch(stakingAddress, this.myAddr).call()) + 1,
         // this lightweigt solution works, but will not trigger an update by itself when its value changes
         canClaimNow: () => claimableStake.amount.asNumber() > 0 && claimableStake.unlockEpoch <= this.stakingEpoch,
       };
+
       const delegatorAddrs: Array<string> = await this.stContract.methods.poolDelegators(stakingAddress).call();
       const bannedUntilBlock = parseInt(await this.vsContract.methods.bannedUntil(miningAddress).call());
       // TODO: is rounding up what we want?
-      const bannedUntilEpoch = this.stakingEpoch + Math.ceil((bannedUntilBlock - this.stakingEpochStartBlock) / this.epochDuration);
-      const banCount = await this.vsContract.methods.banCounter(miningAddress).call();
-      //const addedInEpoch =
+      const bannedUntilEpoch = this.stakingEpoch
+        + Math.ceil((bannedUntilBlock - this.stakingEpochStartBlock) / this.epochDuration);
+      const banCount = parseInt(await this.vsContract.methods.banCounter(miningAddress).call());
+      // const addedInEpoch =
 
       const newPool = {
         miningAddress,
@@ -464,9 +450,9 @@ export default class Context {
   }
 
   private async getValidatorStakeShare(miningAddr: Address): Promise<number> {
-    const validatorStakeAmount: Amount = await this.brContract.methods.snapshotPoolValidatorStakeAmount(this.stakingEpoch, miningAddr).call();
-    const totalStakeAmount: Amount = await this.brContract.methods.snapshotPoolTotalStakeAmount(this.stakingEpoch, miningAddr).call();
-    return (validatorStakeAmount.asNumber() * 100) / totalStakeAmount.asNumber();
+    const vStake = await this.brContract.methods.snapshotPoolValidatorStakeAmount(this.stakingEpoch, miningAddr).call();
+    const totalStake = await this.brContract.methods.snapshotPoolTotalStakeAmount(this.stakingEpoch, miningAddr).call();
+    return (vStake.asNumber() * 100) / totalStake.asNumber();
   }
 
   private async getValidatorRewardShare(stakingAddr: Address): Promise<number> {
@@ -494,7 +480,7 @@ export default class Context {
   }
 
   // does relevant state updates and checks if the epoch changed
-  private async handleNewBlock(web3Instance: any, blockHeader: any): Promise<void> {
+  private async handleNewBlock(web3Instance: Web3, blockHeader: BlockHeader): Promise<void> {
     this.currentBlockNumber = blockHeader.number;
     this.myBalance = await web3Instance.eth.getBalance(this.myAddr);
 
@@ -540,7 +526,7 @@ export default class Context {
       await this.handleNewBlock(web3Instance, blockHeader);
     });
 
-    this.stContract.events.allEvents({}, async (error: any, event: any) => {
+    this.stContract.events.allEvents({}, async (error, event) => {
       if (error) {
         console.log(`event error: ${error}`);
       } else if (this.handledStEvents.has(event.blockNumber)) {
@@ -555,7 +541,7 @@ export default class Context {
     // listen to InitiateChange events. Those signal Parity to switch validator set.
     // for logging purposes only at the moment
     // re-read pools on any contract event
-    this.vsContract.events.InitiateChange({}, async (error: any, event: any) => {
+    this.vsContract.events.InitiateChange({}, async (error, event) => {
       if (error) {
         console.log(`event error: ${error}`);
       } else {

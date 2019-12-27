@@ -19,7 +19,8 @@
     "web3": "^1.2.4",
     "web3-core": "^1.2.4",
     "web3-eth": "^1.2.4",
-    "web3-eth-contract": "^1.2.4"
+    "web3-eth-contract": "^1.2.4",
+    "web3-utils": "^1.2.4"
   },
   "scripts": {
     "start": "react-scripts start",
@@ -27,7 +28,7 @@
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
-    "lint": "eslint './src/**/*.{ts,tsx}'",
+    "lint": "node_modules/.bin/eslint './src/!(abis)/**/*.{ts,tsx}'",
     "make-abis": "node_modules/.bin/typechain --target web3-v1 --outDir src/abis/ 'posdao-contracts/build/contracts/**/*.json'"
   },
   "browserslist": {
@@ -57,6 +58,6 @@
     "pre-commit": "^1.2.2",
     "prettier": "^1.18.2",
     "typechain": "^1.0.3",
-    "typechain-target-web3-v1": "^1.0.1"
+    "typechain-target-web3-v1": "^1.0.4"
   }
 }
