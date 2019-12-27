@@ -348,6 +348,9 @@ export default class Context {
 
   private brContract: any; // BlockReward
 
+  // TODO: we should probably get rid of either start or end block, can be calculated with epochDuration
+  private stakingEpochStartBlock = -1;
+
   private stakingEpochEndBlock = -1;
 
   private stakeWithdrawDisallowPeriod = -1;
@@ -381,9 +384,10 @@ export default class Context {
     // eslint-disable-next-line no-underscore-dangle
     console.log(`vs: ${this.vsContract._address}, st: ${this.stContract._address}, candidateMinStake: ${this.candidateMinStake}`);
 
-    this.epochDuration = await this.stContract.methods.stakingEpochDuration().call();
-    this.stakingEpoch = await this.stContract.methods.stakingEpoch().call();
-    this.stakingEpochEndBlock = await this.stContract.methods.stakingEpochEndBlock().call();
+    this.epochDuration = parseInt(await this.stContract.methods.stakingEpochDuration().call());
+    this.stakingEpoch = parseInt(await this.stContract.methods.stakingEpoch().call());
+    this.stakingEpochStartBlock = parseInt(await this.stContract.methods.stakingEpochStartBlock().call());
+    this.stakingEpochEndBlock = parseInt(await this.stContract.methods.stakingEpochEndBlock().call());
     this.stakeWithdrawDisallowPeriod = await this.stContract.methods.stakeWithdrawDisallowPeriod().call();
 
     await this.subscribeToEvents(this.web3WS);
@@ -416,6 +420,8 @@ export default class Context {
       };
       const delegatorAddrs: Array<string> = await this.stContract.methods.poolDelegators(stakingAddress).call();
       const bannedUntilBlock = parseInt(await this.vsContract.methods.bannedUntil(miningAddress).call());
+      // TODO: is rounding up what we want?
+      const bannedUntilEpoch = this.stakingEpoch + Math.ceil((bannedUntilBlock - this.stakingEpochStartBlock) / this.epochDuration);
       const banCount = await this.vsContract.methods.banCounter(miningAddress).call();
       //const addedInEpoch =
 
@@ -432,10 +438,10 @@ export default class Context {
         validatorRewardShare: await this.getValidatorRewardShare(stakingAddress),
         validatorStakeShare: await this.getValidatorStakeShare(miningAddress),
         claimableReward: await this.getClaimableReward(stakingAddress),
-        bannedUntilEpoch: Math.ceil(bannedUntilBlock / this.epochDuration), // TODO: is rounding up what we want?
+        bannedUntilEpoch,
         isBanned: () => bannedUntilBlock > this.currentBlockNumber,
         banCount,
-        addedInEpoch: 0,
+        addedInEpoch: 0, // TODO
       };
       this.pools.push(newPool);
     });
@@ -495,7 +501,8 @@ export default class Context {
     // epoch change
     if (this.currentBlockNumber > this.stakingEpochEndBlock) {
       console.log(`updating stakingEpochEndBlock at block ${this.currentBlockNumber}`);
-      this.stakingEpochEndBlock = await this.stContract.methods.stakingEpochEndBlock().call();
+      this.stakingEpochStartBlock = parseInt(await this.stContract.methods.stakingEpochStartBlock().call());
+      this.stakingEpochEndBlock = parseInt(await this.stContract.methods.stakingEpochEndBlock().call());
       const newStakingEpoch = parseInt(await this.stContract.methods.stakingEpoch().call());
       if (newStakingEpoch !== this.stakingEpoch) {
         this.stakingEpoch = newStakingEpoch;
