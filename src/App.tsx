@@ -55,7 +55,9 @@ class App extends React.Component<AppProps, {}> {
   public render(): JSX.Element {
     const { context } = this.props;
     const minStakeAmount = context.candidateMinStake.print();
-    this.stakeAmountStr = minStakeAmount; // init
+    if (this.stakeAmountStr === '') {
+      this.stakeAmountStr = minStakeAmount; // init
+    }
     const poolList = context.pools.map((pool) => (
       <PoolView context={context} pool={pool} key={pool.stakingAddress} />
     ));
