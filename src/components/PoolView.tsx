@@ -32,6 +32,7 @@ export default class PoolView extends React.Component<PoolViewProps, {}> {
     this.processing = true;
     const { context, pool } = this.props;
     const stakeAmount = parseInt(this.amountStr);
+    const previousStakeAmount = pool.myStake.asNumber();
     const minStake = pool === context.myPool ? context.candidateMinStake : context.delegatorMinStake;
     if (Number.isNaN(stakeAmount)) {
       alert('no amount entered');
@@ -42,7 +43,7 @@ export default class PoolView extends React.Component<PoolViewProps, {}> {
     } else if (pool !== context.myPool && pool.candidateStake < context.candidateMinStake) {
       // TODO: this condition should be checked before even enabling the button
       alert('insufficient candidate (pool owner) stake');
-    } else if (stakeAmount < minStake.asNumber()) {
+    } else if (previousStakeAmount + stakeAmount < minStake.asNumber()) {
       alert(`min staking amount is ${minStake.print()}`);
     } else {
       await context.stake(pool.stakingAddress, stakeAmount);
