@@ -97,17 +97,41 @@ export default class PoolView extends React.Component<PoolViewProps, {}> {
     this.processing = false;
   }
 
+  // eslint-disable-next-line class-methods-use-this
+  private getPoolClasses(pool: IPool): string {
+    if (pool.isBanned()) {
+      return 'banned-pool';
+    }
+    if (!pool.isActive) {
+      return 'inactive-pool';
+    }
+    if (pool.isCurrentValidator) {
+      return 'current-validator';
+    }
+    return '';
+  }
+
   public render(): ReactNode {
     const { pool } = this.props;
 
-    let extraInfo = '';
+    let extraInfo = `added in epoch ${pool.addedInEpoch}\n`;
+    extraInfo += `blocks authored: ${pool.blocksAuthored}\n`;
+    if (pool.isCurrentValidator) {
+      extraInfo += 'in validator set of current epoch\n';
+    }
+    if (pool.banCount > 0) {
+      extraInfo += `ban counter: ${pool.banCount}\n`;
+    }
+    if (!pool.isActive) {
+      extraInfo += 'currently not active\n';
+    }
     if (pool.isBanned()) {
-      extraInfo += `banned until epoch ${pool.bannedUntilEpoch}`;
+      extraInfo += `CURRENTLY BANNED - until epoch ${pool.bannedUntilEpoch}`;
     }
 
     return (
-      <tr className={`${pool.isBanned() ? 'banned-pool' : ''}`} title={extraInfo}>
-        <td>
+      <tr className={this.getPoolClasses(pool)}>
+        <td title={extraInfo}>
           <span className={`text-monospace ${pool.isMe ? ' text-primary' : ''}`}>{pool.stakingAddress}</span><br />
           <small className="text-monospace-">(mining: {pool.miningAddress})</small>
         </td>

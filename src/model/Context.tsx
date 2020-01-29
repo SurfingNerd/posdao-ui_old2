@@ -63,6 +63,7 @@ interface IDelegator {
 
 // TODO: when is it worth it creating a class / dedicated file?
 export interface IPool {
+  isActive: boolean; // currently "active" pool
   readonly stakingAddress: Address;
   miningAddress: Address;
   addedInEpoch: number;
@@ -83,6 +84,7 @@ export interface IPool {
   isBanned(): boolean;
   bannedUntilEpoch: number;
   banCount: number;
+  blocksAuthored: number;
 }
 
 // TODO: dry-run / estimate gas before sending actual transactions
@@ -109,6 +111,8 @@ export default class Context {
   // positive value: allowed for n more blocks
   // negative value: allowed in n blocks
   @observable public stakingAllowedTimeframe = 0;
+
+  @observable public isSyncingPools = true;
 
   @observable public pools!: IPool[];
 
@@ -335,6 +339,9 @@ export default class Context {
 
   private brContract!: BlockRewardAuRaCoins;
 
+  // start block of the first epoch (epoch 0) since posdao was activated
+  private posdaoStartBlock!: number;
+
   // TODO: we should probably get rid of either start or end block, can be calculated with epochDuration
   private stakingEpochStartBlock!: number;
 
@@ -375,9 +382,12 @@ export default class Context {
     this.stakingEpochEndBlock = parseInt(await this.stContract.methods.stakingEpochEndBlock().call());
     this.stakeWithdrawDisallowPeriod = parseInt(await this.stContract.methods.stakeWithdrawDisallowPeriod().call());
 
+    this.posdaoStartBlock = this.stakingEpochStartBlock - this.stakingEpoch * this.epochDuration;
+
     await this.subscribeToEvents(this.web3WS);
 
     await this.syncPoolsState();
+    this.isSyncingPools = false;
   }
 
   // (re-)builds the data structure this.pools based on the current state on chain
@@ -409,9 +419,23 @@ export default class Context {
       const bannedUntilEpoch = this.stakingEpoch
         + Math.ceil((bannedUntilBlock - this.stakingEpochStartBlock) / this.epochDuration);
       const banCount = parseInt(await this.vsContract.methods.banCounter(miningAddress).call());
-      // const addedInEpoch =
+
+      const stEvents = await this.stContract.getPastEvents('allEvents', { fromBlock: 0 });
+      // there are between 1 and n AddedPool events per pool. We're looking for the first one
+      const poolAddedEvent = stEvents.filter((e) => e.event === 'AddedPool' && e.returnValues.poolStakingAddress === stakingAddress)
+        .sort((e1, e2) => e1.blockNumber - e2.blockNumber);
+      console.assert(poolAddedEvent.length > 0, `no AddedPool event found for ${stakingAddress}`);
+      // result can be negative for pools added as "initial validators", thus setting 0 as min value
+      const addedInEpoch = Math.max(0, Math.floor((poolAddedEvent[0].blockNumber - this.posdaoStartBlock) / this.epochDuration));
+
+      // fetch and add the number of blocks authored per epoch since this pool was created
+      const blocksAuthored = await [...Array(this.stakingEpoch - addedInEpoch)]
+        .map(async (_, i) => parseInt(await this.brContract.methods.blocksCreated(this.stakingEpoch - i, miningAddress).call()))
+        .reduce(async (acc, cur) => await acc + await cur);
+
 
       const newPool = {
+        isActive: activePoolAddrs.indexOf(stakingAddress) >= 0,
         miningAddress,
         isCurrentValidator: this.isCurrentValidator(miningAddress),
         stakingAddress,
@@ -427,7 +451,8 @@ export default class Context {
         bannedUntilEpoch,
         isBanned: () => bannedUntilBlock > this.currentBlockNumber,
         banCount,
-        addedInEpoch: 0, // TODO
+        addedInEpoch,
+        blocksAuthored,
       };
       this.pools.push(newPool);
     });
@@ -534,7 +559,9 @@ export default class Context {
       } else {
         this.handledStEvents.add(event.blockNumber);
         console.log(`staking contract event ${event.event} originating from ${event.address} at block ${event.blockNumber}`);
+        this.isSyncingPools = true;
         await this.syncPoolsState();
+        this.isSyncingPools = false;
       }
     });
 

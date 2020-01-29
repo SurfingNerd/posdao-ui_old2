@@ -13,5 +13,13 @@ code {
 }
 
 .banned-pool {
-  background-color: orange;
+  background-color: darkorange;
+}
+
+.inactive-pool {
+  background-color: bisque;
+}
+
+.current-validator {
+  background-color: lightgreen;
 }

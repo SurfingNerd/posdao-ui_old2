@@ -75,6 +75,9 @@ class App extends React.Component<AppProps, {}> {
           </p>
         </header>
         <div id="poolList">
+          <div className="spinner-border" hidden={!context.isSyncingPools} role="status">
+            <span className="sr-only">Syncing Pools...</span>
+          </div>
           <table className="table table-bordered">
             <thead>
               <tr>
