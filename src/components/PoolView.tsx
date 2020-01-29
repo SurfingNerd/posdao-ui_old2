@@ -40,7 +40,7 @@ export default class PoolView extends React.Component<PoolViewProps, {}> {
       alert(`insufficient balance (${context.myBalance.print()}) for selected amount ${stakeAmount}`);
     } else if (!context.canStakeOrWithdrawNow) {
       alert('outside staking/withdraw time window');
-    } else if (pool !== context.myPool && pool.candidateStake < context.candidateMinStake) {
+    } else if (pool !== context.myPool && pool.candidateStake.asNumber() < context.candidateMinStake.asNumber()) {
       // TODO: this condition should be checked before even enabling the button
       alert('insufficient candidate (pool owner) stake');
     } else if (previousStakeAmount + stakeAmount < minStake.asNumber()) {

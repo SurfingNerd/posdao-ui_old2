@@ -384,10 +384,10 @@ export default class Context {
 
     this.posdaoStartBlock = this.stakingEpochStartBlock - this.stakingEpoch * this.epochDuration;
 
-    await this.subscribeToEvents(this.web3WS);
-
     await this.syncPoolsState();
     this.isSyncingPools = false;
+
+    await this.subscribeToEvents(this.web3WS);
   }
 
   // (re-)builds the data structure this.pools based on the current state on chain
@@ -437,7 +437,7 @@ export default class Context {
       const newPool = {
         isActive: activePoolAddrs.indexOf(stakingAddress) >= 0,
         miningAddress,
-        isCurrentValidator: this.isCurrentValidator(miningAddress),
+        isCurrentValidator: false, // set by handler for new blocks
         stakingAddress,
         candidateStake,
         totalStake,
@@ -464,14 +464,16 @@ export default class Context {
     const newCurrentValidators = (await this.vsContract.methods.getValidators().call()).sort();
     // make sure both arrays were sorted beforehand
     if (this.currentValidators.toString() !== newCurrentValidators.toString()) {
-      console.log(`validator set changed in block ${this.currentBlockNumber}`);
+      console.log(`validator set changed in block ${this.currentBlockNumber} to: ${newCurrentValidators}`);
       this.currentValidators = newCurrentValidators;
-      // update pools accordingly
-      this.pools.forEach((p) => {
-        console.log(`updating validator state for ${p.stakingAddress}`);
-        p.isCurrentValidator = newCurrentValidators.indexOf(p.miningAddress) >= 0;
-      });
     }
+
+    // the pools are updated every time anyway, otherwise we currently can have race conditions
+    // TODO: solve this in a more elegant way
+    this.pools.forEach((p) => {
+      // console.log(`updating validator state for ${p.stakingAddress}`);
+      p.isCurrentValidator = newCurrentValidators.indexOf(p.miningAddress) >= 0;
+    });
   }
 
   private async getValidatorStakeShare(miningAddr: Address): Promise<number> {
