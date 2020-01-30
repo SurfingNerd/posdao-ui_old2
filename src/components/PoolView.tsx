@@ -132,6 +132,7 @@ export default class PoolView extends React.Component<PoolViewProps, {}> {
     return (
       <tr className={this.getPoolClasses(pool)}>
         <td title={extraInfo}>
+          { pool.ensName && <div className="text-monospace-">{pool.ensName}</div> }
           <span className={`text-monospace ${pool.isMe ? ' text-primary' : ''}`}>{pool.stakingAddress}</span><br />
           <small className="text-monospace-">(mining: {pool.miningAddress})</small>
         </td>

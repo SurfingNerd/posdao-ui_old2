@@ -12,6 +12,9 @@ import { ValidatorSetAuRa } from '../contracts/ValidatorSetAuRa';
 import { StakingAuRaCoins } from '../contracts/StakingAuRaCoins';
 import { BlockRewardAuRaCoins } from '../contracts/BlockRewardAuRaCoins';
 
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const namehash = require('eth-ens-namehash');
+
 // needed for querying injected web3 (e.g. from Metamask)
 declare global {
   interface Window {
@@ -65,6 +68,7 @@ interface IDelegator {
 export interface IPool {
   isActive: boolean; // currently "active" pool
   readonly stakingAddress: Address;
+  ensName: string | undefined;
   miningAddress: Address;
   addedInEpoch: number;
   isCurrentValidator: boolean;
@@ -120,9 +124,13 @@ export default class Context {
 
   // TODO: properly implement singleton pattern
   // eslint-disable-next-line max-len
-  public static async initialize(wsUrl: URL, validatorSetContractAddress: Address): Promise<Context> {
+  public static async initialize(wsUrl: URL, ensRpcUrl: URL, validatorSetContractAddress: Address): Promise<Context> {
     const ctx = new Context();
     ctx.web3WS = new Web3(wsUrl.toString());
+    ctx.web3WS.eth.getBlockNumber().catch(console.error); // test connection
+
+    ctx.web3Ens = new Web3(ensRpcUrl.toString());
+    ctx.web3Ens.eth.getBlockNumber().catch(console.error); // test connection
 
     // doc: https://metamask.github.io/metamask-docs/API_Reference/Ethereum_Provider
     if (!window.ethereum) {
@@ -146,6 +154,11 @@ export default class Context {
     ctx.defaultTxOpts.from = ctx.myAddr;
 
     await ctx.initContracts(validatorSetContractAddress);
+
+    await ctx.syncPoolsState();
+    ctx.isSyncingPools = false;
+
+    await ctx.subscribeToEvents(ctx.web3WS);
 
     return ctx;
   }
@@ -326,11 +339,14 @@ export default class Context {
   // ============================= PRIVATE INTERFACE ==================================
 
   // connection provided via Metamask.
-  private web3: Web3;
+  private web3!: Web3;
 
   // additional websocket connection for better subscription performance - see https://github.com/MetaMask/metamask-extension/issues/1645
   // TODO: make sure both web3 instances get connected to the same network
-  private web3WS: Web3;
+  private web3WS!: Web3;
+
+  // web3 instance for the network we use for ENS in order to fetch names for pools
+  public web3Ens!: Web3;
 
   // TODO: find better names for the contract instances
   private vsContract!: ValidatorSetAuRa;
@@ -355,10 +371,9 @@ export default class Context {
     from: '', gasPrice: '20000000000', gasLimit: '6000000', value: '0',
   };
 
-  private constructor() {
-    this.web3 = new Web3();
-    this.web3WS = new Web3();
-  }
+  // it's not useless, but made private
+  // eslint-disable-next-line no-useless-constructor,@typescript-eslint/no-empty-function
+  private constructor() {}
 
   private async initContracts(validatorSetContractAddress: Address): Promise<void> {
     try {
@@ -383,11 +398,6 @@ export default class Context {
     this.stakeWithdrawDisallowPeriod = parseInt(await this.stContract.methods.stakeWithdrawDisallowPeriod().call());
 
     this.posdaoStartBlock = this.stakingEpochStartBlock - this.stakingEpoch * this.epochDuration;
-
-    await this.syncPoolsState();
-    this.isSyncingPools = false;
-
-    await this.subscribeToEvents(this.web3WS);
   }
 
   // (re-)builds the data structure this.pools based on the current state on chain
@@ -401,6 +411,7 @@ export default class Context {
     const poolAddrs = activePoolAddrs.concat(inactivePoolAddrs);
     poolAddrs.forEach(async (stakingAddress) => {
       console.log(`checking pool ${stakingAddress}`);
+      const ensName = await this.getEnsNameOf(stakingAddress);
       const miningAddress = await this.vsContract.methods.miningByStakingAddress(stakingAddress).call();
       const candidateStake = await this.stContract.methods.stakeAmount(stakingAddress, stakingAddress).call();
       const totalStake = await this.stContract.methods.stakeAmountTotal(stakingAddress).call();
@@ -439,6 +450,7 @@ export default class Context {
         miningAddress,
         isCurrentValidator: false, // set by handler for new blocks
         stakingAddress,
+        ensName,
         candidateStake,
         totalStake,
         myStake,
@@ -456,6 +468,17 @@ export default class Context {
       };
       this.pools.push(newPool);
     });
+  }
+
+  private async getEnsNameOf(addr: Address): Promise<string | undefined> {
+    const lookup = `${addr.toLowerCase().substr(2)}.addr.reverse`;
+    const ResolverContract = await this.web3Ens.eth.ens.resolver(lookup);
+    const nh = namehash.hash(lookup);
+    try {
+      return await ResolverContract.methods.name(nh).call();
+    } catch (e) {
+      return undefined;
+    }
   }
 
   // flags pools in the current validator set.

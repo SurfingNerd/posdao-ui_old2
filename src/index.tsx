@@ -7,6 +7,7 @@ import App from './App';
 import * as serviceWorker from './serviceWorker';
 
 const wsUrl = new URL(process.env.REACT_APP_WS_URL || 'ws://localhost:9541');
+const ensRpcUrl = new URL(process.env.REACT_APP_ENS_RPC_URL || 'https://ropsten.infura.io');
 const validatorSetContractAddress = process.env.REACT_APP_VALIDATORSET_CONTRACT || '0x1000000000000000000000000000000000000001';
 
 ReactDOM.render(
@@ -17,7 +18,7 @@ ReactDOM.render(
 // debug
 declare let window: any;
 
-Context.initialize(wsUrl, validatorSetContractAddress)
+Context.initialize(wsUrl, ensRpcUrl, validatorSetContractAddress)
   .then((ctx) => {
     // debug
     window.context = ctx;
