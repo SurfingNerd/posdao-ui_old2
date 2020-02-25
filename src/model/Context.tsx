@@ -409,7 +409,10 @@ export default class Context {
     const inactivePoolAddrs: Array<string> = await this.stContract.methods.getPoolsInactive().call();
     console.log(`syncing ${activePoolAddrs.length} active and ${inactivePoolAddrs.length} inactive pools...`);
     const poolAddrs = activePoolAddrs.concat(inactivePoolAddrs);
-    await Promise.all(poolAddrs.map(async (stakingAddress) => {
+
+    // eslint-disable-next-line no-restricted-syntax
+    for (const stakingAddress of poolAddrs) {
+      /* eslint-disable no-await-in-loop */
       console.log(`checking pool ${stakingAddress}`);
       const ensName = await this.getEnsNameOf(stakingAddress);
       const miningAddress = await this.vsContract.methods.miningByStakingAddress(stakingAddress).call();
@@ -466,7 +469,7 @@ export default class Context {
         blocksAuthored,
       };
       this.pools.push(newPool);
-    }));
+    }
     console.log(`sync done, ${this.pools.length} pools in list`);
   }
 
