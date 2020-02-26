@@ -68,7 +68,7 @@ interface IDelegator {
 export interface IPool {
   isActive: boolean; // currently "active" pool
   readonly stakingAddress: Address;
-  ensName: string | undefined;
+  ensName: string;
   miningAddress: Address;
   addedInEpoch: number;
   isCurrentValidator: boolean;
@@ -127,10 +127,7 @@ export default class Context {
   public static async initialize(wsUrl: URL, ensRpcUrl: URL, validatorSetContractAddress: Address): Promise<Context> {
     const ctx = new Context();
     ctx.web3WS = new Web3(wsUrl.toString());
-    ctx.web3WS.eth.getBlockNumber().catch(console.error); // test connection
-
     ctx.web3Ens = new Web3(ensRpcUrl.toString());
-    ctx.web3Ens.eth.getBlockNumber().catch(console.error); // test connection
 
     // doc: https://metamask.github.io/metamask-docs/API_Reference/Ethereum_Provider
     if (!window.ethereum) {
@@ -139,6 +136,17 @@ export default class Context {
 
     ctx.web3 = new Web3(window.ethereum);
     ctx.myAddr = ctx.web3.utils.toChecksumAddress((await window.ethereum.enable())[0]);
+
+    // test connections
+    try {
+      const rpcBlockNr = await ctx.web3.eth.getBlockNumber();
+      const wsBlockNr = await ctx.web3WS.eth.getBlockNumber();
+      console.log(`block numbers: rpc ${rpcBlockNr}, ws ${wsBlockNr}`);
+    } catch (e) {
+      console.error(`connection test failed: ${e}`);
+    }
+
+    ctx.web3Ens.eth.getBlockNumber().catch(console.error); // test connection (non-blocking)
 
     // debug
     window.web3 = ctx.web3;
@@ -411,7 +419,7 @@ export default class Context {
     const poolAddrs = activePoolAddrs.concat(inactivePoolAddrs);
     await Promise.all(poolAddrs.map(async (stakingAddress) => {
       console.log(`checking pool ${stakingAddress}`);
-      const ensName = await this.getEnsNameOf(stakingAddress);
+      const ensNamePromise = this.getEnsNameOf(stakingAddress);
       const miningAddress = await this.vsContract.methods.miningByStakingAddress(stakingAddress).call();
       const candidateStake = await this.stContract.methods.stakeAmount(stakingAddress, stakingAddress).call();
       const totalStake = await this.stContract.methods.stakeAmountTotal(stakingAddress).call();
@@ -449,7 +457,7 @@ export default class Context {
         miningAddress,
         isCurrentValidator: false, // set by handler for new blocks
         stakingAddress,
-        ensName,
+        ensName: '',
         candidateStake,
         totalStake,
         myStake,
@@ -465,19 +473,22 @@ export default class Context {
         addedInEpoch,
         blocksAuthored,
       };
+      // done in the background, non-blocking
+      ensNamePromise.then((name) => newPool.ensName = name);
+
       this.pools.push(newPool);
     }));
     console.log(`sync done, ${this.pools.length} pools in list`);
   }
 
-  private async getEnsNameOf(addr: Address): Promise<string | undefined> {
+  private async getEnsNameOf(addr: Address): Promise<string> {
     const lookup = `${addr.toLowerCase().substr(2)}.addr.reverse`;
     const ResolverContract = await this.web3Ens.eth.ens.resolver(lookup);
     const nh = namehash.hash(lookup);
     try {
       return await ResolverContract.methods.name(nh).call();
     } catch (e) {
-      return undefined;
+      return '';
     }
   }
 
