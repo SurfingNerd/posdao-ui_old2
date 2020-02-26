@@ -100,7 +100,7 @@ class App extends React.Component<AppProps, {}> {
           </table>
         </div>
         <hr />
-        <div id="addPool" hidden={context.iHaveAPool}>
+        <div id="addPool" hidden={context.iHaveAPool || context.isSyncingPools}>
           <form spellCheck={false}>
             <label>pool address:   <input type="text" value={context.myAddr} readOnly title="determined by current wallet address" /></label> <br />
             <label>mining address: <input type="text" onChange={(e) => (this.miningKeyAddr = e.currentTarget.value)} /></label> <br />

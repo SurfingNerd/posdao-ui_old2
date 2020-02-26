@@ -45,6 +45,8 @@ export default class PoolView extends React.Component<PoolViewProps, {}> {
       alert('insufficient candidate (pool owner) stake');
     } else if (previousStakeAmount + stakeAmount < minStake.asNumber()) {
       alert(`min staking amount is ${minStake.print()}`);
+    } else if (pool.isBanned()) {
+      alert('cannot stake on a pool which is currently banned');
     } else {
       await context.stake(pool.stakingAddress, stakeAmount);
       this.amountStr = '';
@@ -92,7 +94,10 @@ export default class PoolView extends React.Component<PoolViewProps, {}> {
     this.processing = true;
     const { context, pool } = this.props;
 
-    await context.claimReward(pool.stakingAddress);
+    const moreToClaim = await context.claimReward(pool.stakingAddress);
+    if (moreToClaim) {
+      alert('There is more to be claimed. Click the button again in order to do so.');
+    }
 
     this.processing = false;
   }

@@ -204,7 +204,7 @@ export default class Context {
       return;
     }
 
-    const txOpts = this.defaultTxOpts;
+    const txOpts = { ...this.defaultTxOpts };
     txOpts.value = this.web3.utils.toWei(initialStake.toString());
 
     try {
@@ -226,7 +226,7 @@ export default class Context {
       return;
     }
 
-    const txOpts = this.defaultTxOpts;
+    const txOpts = { ...this.defaultTxOpts };
     txOpts.value = this.web3.utils.toWei(amount.toString());
 
     try {
@@ -250,7 +250,7 @@ export default class Context {
       return;
     }
 
-    const txOpts = this.defaultTxOpts;
+    const txOpts = { ...this.defaultTxOpts };
     const amountWei = this.web3.utils.toWei(amount.toString());
 
     try {
@@ -287,7 +287,7 @@ export default class Context {
 
     console.assert(this.canStakeOrWithdrawNow, 'withdraw currently not allowed');
 
-    const txOpts = this.defaultTxOpts;
+    const txOpts = { ...this.defaultTxOpts };
     const amountWeiBN: BN = this.web3.utils.toWei(new BN(amount));
 
     // determine available withdraw method and allowed amount
@@ -318,7 +318,7 @@ export default class Context {
   public async claimStake(poolAddr: Address): Promise<void> {
     console.log(`${this.myAddr} wants to claim the available stake from pool ${poolAddr}`);
     console.assert(this.canStakeOrWithdrawNow, 'withdraw currently not allowed');
-    const txOpts = this.defaultTxOpts;
+    const txOpts = { ...this.defaultTxOpts };
 
     try {
       const receipt = await this.stContract.methods.claimOrderedWithdraw(poolAddr).send(txOpts);
@@ -329,19 +329,41 @@ export default class Context {
   }
 
   /**
-   * Claims the collected block reward from the given pool
+   * Claims the collected block reward from the given pool.
+   * Since the gas price for this transaction grows linearly with the number of epochs, it may not be possible
+   * to claim all rewards in a single tx.
+   * In such cases, this method will claim only a portion of the rewards and the caller needs to
+   * invoke the method again for claiming the rest.
+   *
+   * @return true if there's more to be claimed after this call, false otherwise
    */
-  public async claimReward(poolAddr: Address): Promise<void> {
+  public async claimReward(poolAddr: Address): Promise<boolean> {
     console.log(`${this.myAddr} wants to claim the available reward from pool ${poolAddr}`);
-    const txOpts = this.defaultTxOpts;
+    const txOpts = { ...this.defaultTxOpts };
+
+    const epochList = await this.brContract.methods.epochsToClaimRewardFrom(poolAddr, this.myAddr).call();
+
+    // gas cost is about 35k per epoch. Thus for 150 epochs it should be safely below 6M gas
+    const txEpochList = epochList.slice(1, 151);
+
+    console.log(`claimReward: claiming for ${txEpochList.length} of ${epochList.length} epochs...`);
 
     try {
       // TODO: this can run out of gas (after too many epochs). Solution: break down into multiple txs
-      const receipt = await this.stContract.methods.claimReward([], poolAddr).send(txOpts);
+      const receipt = await this.stContract.methods.claimReward(txEpochList, poolAddr).send(txOpts);
       console.log(`tx ${receipt.transactionHash} for claimReward(): block ${receipt.blockNumber}, ${receipt.gasUsed} gas`);
     } catch (e) {
       console.log(`failed with ${e}`);
+      return true;
     }
+
+    // TODO: this shouldn't be done here, but in a handler for event 'ClaimedReward'
+    const newClaimableReward = await this.getClaimableReward(poolAddr);
+    const curPool = this.pools.filter((p) => p.stakingAddress === poolAddr)[0];
+    console.assert(curPool !== undefined);
+    curPool.claimableReward = newClaimableReward;
+
+    return epochList.length > txEpochList.length;
   }
 
   // ============================= PRIVATE INTERFACE ==================================
@@ -374,7 +396,7 @@ export default class Context {
   private stakeWithdrawDisallowPeriod!: number;
 
   // <from> is set when initializing
-  // TODO: anything else? Should we make it configurable?
+  // TODO: this should be readonly to prevent accidental overwriting. How?
   private defaultTxOpts = {
     from: '', gasPrice: '20000000000', gasLimit: '6000000', value: '0',
   };
@@ -439,7 +461,7 @@ export default class Context {
         + Math.ceil((bannedUntilBlock - this.stakingEpochStartBlock) / this.epochDuration);
       const banCount = parseInt(await this.vsContract.methods.banCounter(miningAddress).call());
 
-      const stEvents = await this.stContract.getPastEvents('allEvents', { fromBlock: 0 });
+      const stEvents = await this.stContract.getPastEvents('allEvents', {fromBlock: 0});
       // there are between 1 and n AddedPool events per pool. We're looking for the first one
       const poolAddedEvent = stEvents.filter((e) => e.event === 'AddedPool' && e.returnValues.poolStakingAddress === stakingAddress)
         .sort((e1, e2) => e1.blockNumber - e2.blockNumber);
@@ -462,7 +484,7 @@ export default class Context {
         totalStake,
         myStake,
         claimableStake,
-        delegators: delegatorAddrs.map((addr) => ({ address: addr })),
+        delegators: delegatorAddrs.map((addr) => ({address: addr})),
         isMe: stakingAddress === this.myAddr,
         validatorRewardShare: await this.getValidatorRewardShare(stakingAddress),
         validatorStakeShare: await this.getValidatorStakeShare(miningAddress),
@@ -595,9 +617,11 @@ export default class Context {
       } else {
         this.handledStEvents.add(event.blockNumber);
         console.log(`staking contract event ${event.event} originating from ${event.address} at block ${event.blockNumber}`);
-        this.isSyncingPools = true;
-        await this.syncPoolsState();
-        this.isSyncingPools = false;
+        if (event.event !== 'ClaimedReward') {
+          this.isSyncingPools = true;
+          await this.syncPoolsState();
+          this.isSyncingPools = false;
+        }
       }
     });
 
