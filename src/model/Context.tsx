@@ -390,7 +390,7 @@ export default class Context {
       const stAddress = await this.vsContract.methods.stakingContract().call();
       this.stContract = new this.web3.eth.Contract((StakingAbi as AbiItem[]), stAddress);
       const brAddress = await this.vsContract.methods.blockRewardContract().call();
-      this.brContract = new this.web3.eth.Contract((BlockRewardAbi as AbiItem[]), brAddress);
+      this.brContract = new this.web3WS.eth.Contract((BlockRewardAbi as AbiItem[]), brAddress);
     } catch (e) {
       console.log(`initializing contracts failed: ${e}`);
       throw e;
