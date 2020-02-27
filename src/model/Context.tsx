@@ -340,6 +340,7 @@ export default class Context {
   public async claimReward(poolAddr: Address): Promise<boolean> {
     console.log(`${this.myAddr} wants to claim the available reward from pool ${poolAddr}`);
     const txOpts = { ...this.defaultTxOpts };
+    txOpts.gasLimit = '8000000'; // this txs are expensive
 
     const epochList = await this.brContract.methods.epochsToClaimRewardFrom(poolAddr, this.myAddr).call();
 
