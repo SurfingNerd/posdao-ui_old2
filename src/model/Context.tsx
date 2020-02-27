@@ -345,7 +345,7 @@ export default class Context {
     const epochList = await this.brContract.methods.epochsToClaimRewardFrom(poolAddr, this.myAddr).call();
 
     // gas cost is about 35k per epoch. Thus for 150 epochs it should be safely below 6M gas
-    const txEpochList = epochList.slice(1, 151);
+    const txEpochList = epochList.slice(0, 150);
 
     console.log(`claimReward: claiming for ${txEpochList.length} of ${epochList.length} epochs...`);
 
