@@ -399,7 +399,7 @@ export default class Context {
   // <from> is set when initializing
   // TODO: this should be readonly to prevent accidental overwriting. How?
   private defaultTxOpts = {
-    from: '', gasPrice: '20000000000', gasLimit: '6000000', value: '0',
+    from: '', gasPrice: '100000000000', gasLimit: '6000000', value: '0',
   };
 
   // it's not useless, but made private
