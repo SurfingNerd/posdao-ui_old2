@@ -1,5 +1,11 @@
 # About
 
+## Before first start handle submodules
+
+retrieve and build the contracts:  `npm run build-contracts && npm run build`
+
+## running the UI
+
 This is a basic Dapp for interacting with the POSDAO contracts of a connected chain.
 
 `cd posdao-test-setup && npm run all-ui-light` starts a dev chain configured for native staking. Takes a few minutes to init posdao.  
