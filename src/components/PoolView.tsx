@@ -20,11 +20,18 @@ export default class PoolView extends React.Component<PoolViewProps, {}> {
     return context.canStakeOrWithdrawNow && !this.processing;
   }
 
-  @action.bound
-  private handleAmount(e: React.ChangeEvent<HTMLInputElement>): void {
-    const inputStr = e.currentTarget.value;
-    const parsed = parseInt(inputStr);
-    this.amountStr = Number.isNaN(parsed) ? '' : parsed.toString();
+  // eslint-disable-next-line class-methods-use-this
+  private getPoolClasses(pool: IPool): string {
+    if (pool.isBanned()) {
+      return 'banned-pool';
+    }
+    if (!pool.isActive) {
+      return 'inactive-pool';
+    }
+    if (pool.isCurrentValidator) {
+      return 'current-validator';
+    }
+    return '';
   }
 
   @action.bound
@@ -54,6 +61,39 @@ export default class PoolView extends React.Component<PoolViewProps, {}> {
     this.processing = false;
   }
 
+  @action.bound
+  private async handleClaimRewardButton(): Promise<void> {
+    this.processing = true;
+    const { context, pool } = this.props;
+
+    const moreToClaim = await context.claimReward(pool.stakingAddress);
+    if (moreToClaim) {
+      alert('There is more to be claimed. Click the button again in order to do so.');
+    }
+
+    this.processing = false;
+  }
+
+  @action.bound
+  private async handleClaimStakeButton(): Promise<void> {
+    this.processing = true;
+    const { context, pool } = this.props;
+    if (!context.canStakeOrWithdrawNow) {
+      alert('outside staking/withdraw time window');
+    } else {
+      await context.claimStake(pool.stakingAddress);
+    }
+    this.processing = false;
+  }
+
+
+  @action.bound
+  private handleAmount(e: React.ChangeEvent<HTMLInputElement>): void {
+    const inputStr = e.currentTarget.value;
+    const parsed = parseInt(inputStr);
+    this.amountStr = Number.isNaN(parsed) ? '' : parsed.toString();
+  }
+
   // TODO: refactor to reduce duplicate code
   @action.bound
   private async handleWithdrawButton(): Promise<void> {
@@ -75,45 +115,6 @@ export default class PoolView extends React.Component<PoolViewProps, {}> {
       this.amountStr = '';
     }
     this.processing = false;
-  }
-
-  @action.bound
-  private async handleClaimStakeButton(): Promise<void> {
-    this.processing = true;
-    const { context, pool } = this.props;
-    if (!context.canStakeOrWithdrawNow) {
-      alert('outside staking/withdraw time window');
-    } else {
-      await context.claimStake(pool.stakingAddress);
-    }
-    this.processing = false;
-  }
-
-  @action.bound
-  private async handleClaimRewardButton(): Promise<void> {
-    this.processing = true;
-    const { context, pool } = this.props;
-
-    const moreToClaim = await context.claimReward(pool.stakingAddress);
-    if (moreToClaim) {
-      alert('There is more to be claimed. Click the button again in order to do so.');
-    }
-
-    this.processing = false;
-  }
-
-  // eslint-disable-next-line class-methods-use-this
-  private getPoolClasses(pool: IPool): string {
-    if (pool.isBanned()) {
-      return 'banned-pool';
-    }
-    if (!pool.isActive) {
-      return 'inactive-pool';
-    }
-    if (pool.isCurrentValidator) {
-      return 'current-validator';
-    }
-    return '';
   }
 
   public render(): ReactNode {

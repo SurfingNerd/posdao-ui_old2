@@ -25,12 +25,13 @@
   },
   "scripts": {
     "start": "react-scripts start",
-    "build-contracts": "git submodule update --init && cd posdao-contracts && npm ci && npm run compile",
     "build": "npm run typechain && react-scripts build",
+    "update-contract-abis": "cp ../hbbft-posdao-contracts/build/contracts/*.json ./src/contract-abis",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
     "lint": "node_modules/.bin/eslint './src/!(abis)/**/*.{ts,tsx}'",
-    "typechain": "node_modules/.bin/typechain --target web3-v1 --outDir src/contracts/ 'posdao-contracts/build/contracts/**/*.json'"
+    "lint-fix": "node_modules/.bin/eslint --fix './src/!(abis)/**/*.{ts,tsx}'",
+    "typechain": "node_modules/.bin/typechain --target web3-v1 --outDir src/contracts/ '../hbbft-posdao-contracts/build/contracts/**/*.json'"
   },
   "browserslist": {
     "production": [

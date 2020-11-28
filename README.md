@@ -1,7 +1,8 @@
 # About
 
-## Before first start handle submodules
+## Before first start
 
+this project references the hbbft-posdao-contracts projects and needs to be in a parallel directory to the hbbft-posdao-contracts projects.
 retrieve and build the contracts:  `npm run build-contracts && npm run build`
 
 ## running the UI
@@ -14,5 +15,3 @@ Once initialized, use `npm run stop-test-setup` and `npm run upgrade-start-test-
 See `.env.example` for supported/needed env variables.
 
 Start with `npm run start`.
-
-TODO: add needed run scripts

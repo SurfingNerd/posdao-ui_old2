@@ -5,12 +5,12 @@ import BN from 'bn.js';
 import { computed, observable } from 'mobx';
 import { BlockHeader } from 'web3-eth';
 import { AbiItem } from 'web3-utils';
-import { abi as ValidatorSetAbi } from '../contract-abis/ValidatorSetAuRa.json';
-import { abi as StakingAbi } from '../contract-abis/StakingAuRaCoins.json';
-import { abi as BlockRewardAbi } from '../contract-abis/BlockRewardAuRaCoins.json';
-import { ValidatorSetAuRa } from '../contracts/ValidatorSetAuRa';
-import { StakingAuRaCoins } from '../contracts/StakingAuRaCoins';
-import { BlockRewardAuRaCoins } from '../contracts/BlockRewardAuRaCoins';
+import { abi as ValidatorSetAbi } from '../contract-abis/ValidatorSetHbbft.json';
+import { abi as StakingAbi } from '../contract-abis/StakingHbbftCoins.json';
+import { abi as BlockRewardAbi } from '../contract-abis/BlockRewardHbbftCoins.json';
+import { ValidatorSetHbbft } from '../contracts/ValidatorSetHbbft';
+import { StakingHbbftCoins } from '../contracts/StakingHbbftCoins';
+import { BlockRewardHbbftCoins } from '../contracts/BlockRewardHbbftCoins';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const namehash = require('eth-ens-namehash');
@@ -380,9 +380,9 @@ export default class Context {
   public web3Ens!: Web3;
 
   // TODO: find better names for the contract instances
-  private vsContract!: ValidatorSetAuRa;
+  private vsContract!: ValidatorSetHbbft;
 
-  private stContract!: StakingAuRaCoins;
+  private stContract!: StakingHbbftCoins;
 
   private brContract!: BlockRewardAuRaCoins;
 
@@ -462,7 +462,7 @@ export default class Context {
         + Math.ceil((bannedUntilBlock - this.stakingEpochStartBlock) / this.epochDuration);
       const banCount = parseInt(await this.vsContract.methods.banCounter(miningAddress).call());
 
-      const stEvents = await this.stContract.getPastEvents('allEvents', {fromBlock: 0});
+      const stEvents = await this.stContract.getPastEvents('allEvents', { fromBlock: 0 });
       // there are between 1 and n AddedPool events per pool. We're looking for the first one
       const poolAddedEvent = stEvents.filter((e) => e.event === 'AddedPool' && e.returnValues.poolStakingAddress === stakingAddress)
         .sort((e1, e2) => e1.blockNumber - e2.blockNumber);
@@ -485,7 +485,7 @@ export default class Context {
         totalStake,
         myStake,
         claimableStake,
-        delegators: delegatorAddrs.map((addr) => ({address: addr})),
+        delegators: delegatorAddrs.map((addr) => ({ address: addr })),
         isMe: stakingAddress === this.myAddr,
         validatorRewardShare: await this.getValidatorRewardShare(stakingAddress),
         validatorStakeShare: await this.getValidatorStakeShare(miningAddress),
