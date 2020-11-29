@@ -103,6 +103,8 @@ export default class Context {
   // TODO: initializing to 0 is a lazy shortcut
   @observable public myBalance: Amount = '0';
 
+  public coinSymbol = 'DMD';
+
   public epochDuration!: number;
 
   public candidateMinStake!: Amount;
@@ -148,7 +150,8 @@ export default class Context {
       console.error(`connection test failed: ${e}`);
     }
 
-    ctx.web3Ens.eth.getBlockNumber().catch(console.error); // test connection (non-blocking)
+    // TODO FIX ENS Stuff.
+    // ctx.web3Ens.eth.getBlockNumber().catch(console.error); // test connection (non-blocking)
 
     // debug
     window.web3 = ctx.web3;
@@ -437,6 +440,7 @@ export default class Context {
     this.stakingEpochStartTime = parseInt(await this.stContract.methods.stakingEpochStartTime().call());
     this.stakingEpochEndTime = parseInt(await this.stContract.methods.stakingFixedEpochEndTime().call());
     this.stakeWithdrawDisallowPeriod = parseInt(await this.stContract.methods.stakingWithdrawDisallowPeriod().call());
+    this.myBalance = await this.web3.eth.getBalance(this.myAddr);
   }
 
   // (re-)builds the data structure this.pools based on the current state on chain
@@ -520,16 +524,25 @@ export default class Context {
     console.log(`sync done, ${this.pools.length} pools in list`);
   }
 
+  /* eslint-disable class-methods-use-this */
+
   private async getEnsNameOf(addr: Address): Promise<string> {
-    const lookup = `${addr.toLowerCase().substr(2)}.addr.reverse`;
-    const ResolverContract = await this.web3Ens.eth.ens.resolver(lookup);
-    const nh = namehash.hash(lookup);
-    try {
-      return await ResolverContract.methods.name(nh).call();
-    } catch (e) {
-      return '';
-    }
+    return '';
   }
+
+  /* eslint-enable class-methods-use-this */
+
+  // TODO: Reactivate ENS Name Support.
+  // private async getEnsNameOf(addr: Address): Promise<string> {
+  //   const lookup = `${addr.toLowerCase().substr(2)}.addr.reverse`;
+  //   const ResolverContract = await this.web3Ens.eth.ens.resolver(lookup);
+  //   const nh = namehash.hash(lookup);
+  //   try {
+  //     return await ResolverContract.methods.name(nh).call();
+  //   } catch (e) {
+  //     return '';
+  //   }
+  // }
 
   // flags pools in the current validator set.
   // TODO: make this more robust (currently depends on assumption about the order of event handling)

@@ -6,9 +6,13 @@ import './index.css';
 import App from './App';
 import * as serviceWorker from './serviceWorker';
 
-const wsUrl = new URL(process.env.REACT_APP_WS_URL || 'ws://localhost:9541');
-const ensRpcUrl = new URL(process.env.REACT_APP_ENS_RPC_URL || 'https://ropsten.infura.io');
+const wsUrl = new URL(process.env.REACT_APP_WS_URL || 'ws://localhost:9540');
+const ensRpcUrl = new URL(process.env.REACT_APP_ENS_RPC_URL || 'https://main-rpc.linkpool.io');
 const validatorSetContractAddress = process.env.REACT_APP_VALIDATORSET_CONTRACT || '0x1000000000000000000000000000000000000001';
+
+// console.log('URL: ', wsUrl);
+// console.log('URL: ', ensRpcUrl);
+// console.log('URL: ', validatorSetContractAddress);
 
 ReactDOM.render(
   <h1>loading...</h1>,

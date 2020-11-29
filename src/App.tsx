@@ -68,7 +68,7 @@ class App extends React.Component<AppProps, {}> {
         <header>
           <p>
             account: <span className="text-primary">{context.myAddr}</span> |
-            balance: {context.myBalance.print()} ATS<br />
+            balance: {context.myBalance.print()} {context.coinSymbol}<br />
 
             current block nr: {context.currentBlockNumber} | current epoch: {context.stakingEpoch} |
             <span className={`${this.isStakingAllowed ? 'text-success' : 'text-danger'}`}> staking {this.stakingAllowedState}: {context.stakingAllowedTimeframe} blocks</span>
