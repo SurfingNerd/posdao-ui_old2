@@ -441,6 +441,7 @@ export default class Context {
     this.stakingEpochEndTime = parseInt(await this.stContract.methods.stakingFixedEpochEndTime().call());
     this.stakeWithdrawDisallowPeriod = parseInt(await this.stContract.methods.stakingWithdrawDisallowPeriod().call());
     this.myBalance = await this.web3.eth.getBalance(this.myAddr);
+    this.canStakeOrWithdrawNow = await this.stContract.methods.areStakeAndWithdrawAllowed().call();
   }
 
   // (re-)builds the data structure this.pools based on the current state on chain
