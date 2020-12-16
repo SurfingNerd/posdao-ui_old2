@@ -1,0 +1,14 @@
+
+version: '3'
+services:
+    web:
+        image: nginx:1.19.5-alpine-perl
+        ports:
+          - "80:80"
+        environment:
+          REACT_APP_WS_URL: 'ws://167.86.125.140:9541'
+          REACT_APP_ENS_RPC_URL: 'https://main-rpc.linkpool.io'
+          REACT_APP_VALIDATORSET_CONTRACT: '0x1000000000000000000000000000000000000001'
+        volumes:
+          - ./build:/usr/share/nginx/html
+        
