@@ -93,6 +93,8 @@ export interface IPool {
   bannedUntil: BN;
   banCount: number;
   blocksAuthored: number;
+  parts: string; // if part of the treshhold key, or pending validator, this holds the PARTS
+  numberOfAcks: number; // if part of the treshhold key, or pending validator, this holds the number of ACKS
 }
 
 // TODO: dry-run / estimate gas before sending actual transactions
@@ -441,7 +443,7 @@ export default class Context {
     // this.posdaoStartBlock = this.stakingEpochStartBlock - this.stakingEpoch * this.epochDuration;
   }
 
-  private async retrieveValuesFromContract(): void {
+  private async retrieveValuesFromContract(): Promise<void> {
     this.epochDuration = parseInt(await this.stContract.methods.stakingFixedEpochDuration().call());
     this.stakingEpoch = parseInt(await this.stContract.methods.stakingEpoch().call());
     this.stakingEpochStartTime = parseInt(await this.stContract.methods.stakingEpochStartTime().call());
@@ -465,7 +467,6 @@ export default class Context {
     const pendingValidatorAddrs = await this.vsContract.methods.getPendingValidators().call();
     console.log('pendingMiningPools:', pendingValidatorAddrs);
 
-    // const getKeysPromise = this
 
     console.log(`syncing ${activePoolAddrs.length} active and ${inactivePoolAddrs.length} inactive pools...`);
     const poolAddrs = activePoolAddrs.concat(inactivePoolAddrs);
@@ -514,10 +515,22 @@ export default class Context {
 
       const blocksAuthored = 0;
 
+      const isPendingValidator = pendingValidatorAddrs.indexOf(miningAddress) >= 0;
+
+      let partsOfValidator = '';
+      let numberOfAcksOfValidator = 0;
+
+      if (isPendingValidator) {
+        partsOfValidator = await this.kghContract.methods.parts(miningAddress).call();
+        const acksLengthBN = new BN(await this.kghContract.methods.getAcksLength(miningAddress).call());
+        numberOfAcksOfValidator = acksLengthBN.toNumber();
+      }
+
+
       const newPool: IPool = {
         isActive: activePoolAddrs.indexOf(stakingAddress) >= 0,
         isToBeElected: toBeElectedPoolAddrs.indexOf(stakingAddress) >= 0,
-        isPendingValidator: pendingValidatorAddrs.indexOf(miningAddress) >= 0,
+        isPendingValidator,
         miningAddress,
         isCurrentValidator: false, // set by handler for new blocks
         stakingAddress,
@@ -536,6 +549,8 @@ export default class Context {
         banCount,
         addedInEpoch,
         blocksAuthored,
+        parts: partsOfValidator,
+        numberOfAcks: numberOfAcksOfValidator,
       };
       console.log('adding:', newPool);
 
