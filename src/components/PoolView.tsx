@@ -86,7 +86,6 @@ export default class PoolView extends React.Component<PoolViewProps, {}> {
     this.processing = false;
   }
 
-
   @action.bound
   private handleAmount(e: React.ChangeEvent<HTMLInputElement>): void {
     const inputStr = e.currentTarget.value;

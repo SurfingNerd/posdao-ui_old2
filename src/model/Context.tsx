@@ -13,7 +13,7 @@ import { StakingHbbftCoins } from '../contracts/StakingHbbftCoins';
 import { BlockRewardHbbftCoins } from '../contracts/BlockRewardHbbftCoins';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
-const namehash = require('eth-ens-namehash');
+// const namehash = require('eth-ens-namehash');
 
 // needed for querying injected web3 (e.g. from Metamask)
 declare global {
@@ -428,7 +428,6 @@ export default class Context {
 
     this.candidateMinStake = await this.stContract.methods.candidateMinStake().call();
     this.delegatorMinStake = await this.stContract.methods.delegatorMinStake().call();
-
 
     await this.retrieveValuesFromContract();
     // this.posdaoStartBlock = this.stakingEpochStartBlock - this.stakingEpoch * this.epochDuration;
