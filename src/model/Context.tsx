@@ -8,9 +8,11 @@ import { AbiItem } from 'web3-utils';
 import { abi as ValidatorSetAbi } from '../contract-abis/ValidatorSetHbbft.json';
 import { abi as StakingAbi } from '../contract-abis/StakingHbbftCoins.json';
 import { abi as BlockRewardAbi } from '../contract-abis/BlockRewardHbbftCoins.json';
+import { abi as KeyGenHistoryAbi } from '../contract-abis/KeyGenHistory.json';
 import { ValidatorSetHbbft } from '../contracts/ValidatorSetHbbft';
 import { StakingHbbftCoins } from '../contracts/StakingHbbftCoins';
 import { BlockRewardHbbftCoins } from '../contracts/BlockRewardHbbftCoins';
+import { KeyGenHistory } from '../contracts/KeyGenHistory';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 // const namehash = require('eth-ens-namehash');
@@ -395,6 +397,8 @@ export default class Context {
 
   private brContract!: BlockRewardHbbftCoins;
 
+  private kghContract!: KeyGenHistory;
+
   // start block of the first epoch (epoch 0) since posdao was activated
   // private posdaoStartBlock!: number;
 
@@ -423,6 +427,8 @@ export default class Context {
       this.stContract = new this.web3.eth.Contract((StakingAbi as AbiItem[]), stAddress);
       const brAddress = await this.vsContract.methods.blockRewardContract().call();
       this.brContract = new this.web3WS.eth.Contract((BlockRewardAbi as AbiItem[]), brAddress);
+      const kghAddress = await this.vsContract.methods.keyGenHistoryContract().call();
+      this.kghContract = new this.web3.eth.Contract((KeyGenHistoryAbi as AbiItem[]), kghAddress);
     } catch (e) {
       console.log(`initializing contracts failed: ${e}`);
       throw e;
@@ -459,6 +465,7 @@ export default class Context {
     const pendingValidatorAddrs = await this.vsContract.methods.getPendingValidators().call();
     console.log('pendingMiningPools:', pendingValidatorAddrs);
 
+    // const getKeysPromise = this
 
     console.log(`syncing ${activePoolAddrs.length} active and ${inactivePoolAddrs.length} inactive pools...`);
     const poolAddrs = activePoolAddrs.concat(inactivePoolAddrs);
