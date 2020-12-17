@@ -31,6 +31,12 @@ export default class PoolView extends React.Component<PoolViewProps, {}> {
     if (pool.isCurrentValidator) {
       return 'current-validator';
     }
+    if (!pool.isToBeElected) {
+      return 'not-to-be-elected';
+    }
+    if (pool.isPendingValidator) {
+      return 'is-pending-validator';
+    }
     return '';
   }
 
@@ -131,7 +137,17 @@ export default class PoolView extends React.Component<PoolViewProps, {}> {
       extraInfo += 'currently not active\n';
     }
     if (pool.isBanned()) {
-      extraInfo += `CURRENTLY BANNED - until epoch ${pool.bannedUntilEpoch}`;
+      extraInfo += `CURRENTLY BANNED - until epoch ${pool.bannedUntil.toString()}`;
+    }
+
+    let validatorInfo = <div />;
+
+    if (pool.isPendingValidator) {
+      validatorInfo = (
+        <div>
+          <small>Pending Validator:</small>
+        </div>
+      );
     }
 
     return (
@@ -140,6 +156,8 @@ export default class PoolView extends React.Component<PoolViewProps, {}> {
           { pool.ensName && <div className="text-monospace-">{pool.ensName}</div> }
           <span className={`text-monospace ${pool.isMe ? ' text-primary' : ''}`}>{pool.stakingAddress}</span><br />
           <small className="text-monospace-">(mining: {pool.miningAddress})</small>
+          {validatorInfo}
+
         </td>
         {/* <td className={miningAddressClass}><small>{pool.miningAddress}</small></td> */}
         <td>{Number.isNaN(pool.validatorStakeShare) ? '-' : Math.round(pool.validatorStakeShare)} / {(pool.validatorRewardShare === 0) ? '-' : Math.round(pool.validatorRewardShare)}</td>

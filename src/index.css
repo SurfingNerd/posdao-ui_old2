@@ -23,3 +23,11 @@ code {
 .current-validator {
   background-color: lightgreen;
 }
+
+.not-to-be-elected {
+  background-color: grey;
+}
+
+.is-pending-validator {
+  background-color: lightblue;
+}

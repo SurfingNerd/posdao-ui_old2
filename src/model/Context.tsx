@@ -67,6 +67,8 @@ interface IDelegator {
 // TODO: when is it worth it creating a class / dedicated file?
 export interface IPool {
   isActive: boolean; // currently "active" pool
+  isToBeElected: boolean; // is to be elected.
+  isPendingValidator: boolean; // pending validator for the next staking epoch.
   readonly stakingAddress: Address;
   ensName: string;
   miningAddress: Address;
@@ -86,7 +88,7 @@ export interface IPool {
   validatorRewardShare: number; // percent
   claimableReward: Amount;
   isBanned(): boolean;
-  bannedUntilEpoch: number;
+  bannedUntil: BN;
   banCount: number;
   blocksAuthored: number;
 }
@@ -433,7 +435,7 @@ export default class Context {
     // this.posdaoStartBlock = this.stakingEpochStartBlock - this.stakingEpoch * this.epochDuration;
   }
 
-  private async retrieveValuesFromContract() {
+  private async retrieveValuesFromContract(): void {
     this.epochDuration = parseInt(await this.stContract.methods.stakingFixedEpochDuration().call());
     this.stakingEpoch = parseInt(await this.stContract.methods.stakingEpoch().call());
     this.stakingEpochStartTime = parseInt(await this.stContract.methods.stakingEpochStartTime().call());
@@ -449,7 +451,15 @@ export default class Context {
   private async syncPoolsState(): Promise<void> {
     this.pools = [];
     const activePoolAddrs: Array<string> = await this.stContract.methods.getPools().call();
+    console.log('active Pools:', activePoolAddrs);
     const inactivePoolAddrs: Array<string> = await this.stContract.methods.getPoolsInactive().call();
+    console.log('inactive Pools:', inactivePoolAddrs);
+    const toBeElectedPoolAddrs = await this.stContract.methods.getPoolsToBeElected().call();
+    console.log('to be elected Pools:', toBeElectedPoolAddrs);
+    const pendingValidatorAddrs = await this.vsContract.methods.getPendingValidators().call();
+    console.log('pendingMiningPools:', pendingValidatorAddrs);
+
+
     console.log(`syncing ${activePoolAddrs.length} active and ${inactivePoolAddrs.length} inactive pools...`);
     const poolAddrs = activePoolAddrs.concat(inactivePoolAddrs);
     await Promise.all(poolAddrs.map(async (stakingAddress) => {
@@ -469,10 +479,6 @@ export default class Context {
 
       const delegatorAddrs: Array<string> = await this.stContract.methods.poolDelegators(stakingAddress).call();
       const bannedUntil = new BN((await this.vsContract.methods.bannedUntil(miningAddress).call()));
-      // TODO fix: is rounding up what we want?
-      // const bannedUntilEpoch = this.stakingEpoch
-      //  + Math.ceil((bannedUntilBlock - this.stakingEpochStartBlock) / this.epochDuration);
-      const bannedUntilEpoch = 0;
 
       const banCount = parseInt(await this.vsContract.methods.banCounter(miningAddress).call());
 
@@ -482,21 +488,29 @@ export default class Context {
         .sort((e1, e2) => e1.blockNumber - e2.blockNumber);
       console.assert(poolAddedEvent.length > 0, `no AddedPool event found for ${stakingAddress}`);
 
+      if (poolAddedEvent.length === 0) {
+        console.error(stEvents);
+      }
+
       // result can be negative for pools added as "initial validators", thus setting 0 as min value
-      // const addedInEpoch = Math.max(0, Math.floor((poolAddedEvent[0].blockNumber - this.posdaoStartBlock) / this.epochDuration));
+      // const addedInEpoch = Math.max(0, Math.floor((poolAddedEvent[0].blockNumber
+      //  - this.posdaoStartBlock) / this.epochDuration));
 
       // TODO FIX: what's the use for addedInEpoch ?!
       const addedInEpoch = 0;
 
       // fetch and add the number of blocks authored per epoch since this pool was created
       // const blocksAuthored = await [...Array(this.stakingEpoch - addedInEpoch)]
-      //   .map(async (_, i) => parseInt(await this.brContract.methods.blocksCreated(this.stakingEpoch - i, miningAddress).call()))
+      //   .map(async (_, i) => parseInt(await this.brContract.methods.blocksCreated(this.stakingEpoch
+      // - i, miningAddress).call()))
       //   .reduce(async (acc, cur) => await acc + await cur);
 
       const blocksAuthored = 0;
 
-      const newPool = {
+      const newPool: IPool = {
         isActive: activePoolAddrs.indexOf(stakingAddress) >= 0,
+        isToBeElected: toBeElectedPoolAddrs.indexOf(stakingAddress) >= 0,
+        isPendingValidator: pendingValidatorAddrs.indexOf(miningAddress) >= 0,
         miningAddress,
         isCurrentValidator: false, // set by handler for new blocks
         stakingAddress,
@@ -510,14 +524,18 @@ export default class Context {
         validatorRewardShare: await this.getValidatorRewardShare(stakingAddress),
         validatorStakeShare: await this.getValidatorStakeShare(miningAddress),
         claimableReward: await this.getClaimableReward(stakingAddress),
-        bannedUntilEpoch,
+        bannedUntil,
         isBanned: () => bannedUntil.gt(new BN(this.currentTimestamp)),
         banCount,
         addedInEpoch,
         blocksAuthored,
       };
+      console.log('adding:', newPool);
+
       // done in the background, non-blocking
-      ensNamePromise.then((name) => newPool.ensName = name);
+      ensNamePromise.then((name) => {
+        newPool.ensName = name;
+      });
 
       this.pools.push(newPool);
     }));
@@ -525,11 +543,12 @@ export default class Context {
   }
 
   /* eslint-disable class-methods-use-this */
-
+  /* eslint-disable @typescript-eslint/no-unused-vars */
   private async getEnsNameOf(addr: Address): Promise<string> {
     return '';
   }
 
+  /* eslint-enable @typescript-eslint/no-unused-vars */
   /* eslint-enable class-methods-use-this */
 
   // TODO: Reactivate ENS Name Support.
