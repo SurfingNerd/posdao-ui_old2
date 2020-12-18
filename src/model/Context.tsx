@@ -445,6 +445,8 @@ export default class Context {
 
   private async retrieveValuesFromContract(): Promise<void> {
     this.epochDuration = parseInt(await this.stContract.methods.stakingFixedEpochDuration().call());
+    const epochStartBlock = parseInt(await this.stContract.methods.stakingEpochStartBlock().call());
+    console.error(epochStartBlock);
     this.stakingEpoch = parseInt(await this.stContract.methods.stakingEpoch().call());
     this.stakingEpochStartTime = parseInt(await this.stContract.methods.stakingEpochStartTime().call());
     this.stakingEpochEndTime = parseInt(await this.stContract.methods.stakingFixedEpochEndTime().call());
