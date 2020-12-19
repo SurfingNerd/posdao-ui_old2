@@ -1,0 +1,512 @@
+{
+  "contractName": "UpgradeableOwned",
+  "abi": [],
+  "metadata": "{\"compiler\":{\"version\":\"0.5.16+commit.9c3226ce\"},\"language\":\"Solidity\",\"output\":{\"abi\":[],\"devdoc\":{\"methods\":{}},\"userdoc\":{\"methods\":{}}},\"settings\":{\"compilationTarget\":{\"/home/sn/dmd/dmd-meta/hbbft-posdao-contracts/contracts/upgradeability/UpgradeableOwned.sol\":\"UpgradeableOwned\"},\"evmVersion\":\"istanbul\",\"libraries\":{},\"optimizer\":{\"enabled\":true,\"runs\":200},\"remappings\":[]},\"sources\":{\"/home/sn/dmd/dmd-meta/hbbft-posdao-contracts/contracts/upgradeability/UpgradeabilityAdmin.sol\":{\"keccak256\":\"0x0b393066e706db35b9c523d3a21b63a5d9eafde51fdefbcbc4d6c815dff574a2\",\"urls\":[\"bzz-raw://493d9041c195ee69b05ab36000021c7171816f3efb2623c8d2a1d90118fb1fd9\",\"dweb:/ipfs/QmPuhiCNVZjM4B18cEpphc5juGTDcjhNcKnBDxexXMZ3Md\"]},\"/home/sn/dmd/dmd-meta/hbbft-posdao-contracts/contracts/upgradeability/UpgradeableOwned.sol\":{\"keccak256\":\"0xe9eefd29c6ddb1827e99e9c6c61a5b2ccd2dc9d6a97d176bad914e0f1e8671ca\",\"urls\":[\"bzz-raw://359c65fd2eed4da4eea4a5c8ca855fd5f89975d6afb966b33540a15755d76a6b\",\"dweb:/ipfs/QmVB7diM5HApkF9njDKTMMpSMcAYj8RxCesyFaGkpGNeFh\"]}},\"version\":1}",
+  "bytecode": "0x6080604052348015600f57600080fd5b50603e80601d6000396000f3fe6080604052600080fdfea265627a7a723158205305659a1d93d5ce64cfdce2277a8e040391cca5e9971a37ae33e38289fe65c064736f6c63430005100032",
+  "deployedBytecode": "0x6080604052600080fdfea265627a7a723158205305659a1d93d5ce64cfdce2277a8e040391cca5e9971a37ae33e38289fe65c064736f6c63430005100032",
+  "sourceMap": "63:268:34:-;;;;8:9:-1;5:2;;;30:1;27;20:12;5:2;63:268:34;;;;;;;",
+  "deployedSourceMap": "63:268:34:-;;;;;",
+  "source": "pragma solidity ^0.5.0;\n\nimport \"./UpgradeabilityAdmin.sol\";\n\n\ncontract UpgradeableOwned is UpgradeabilityAdmin {\n    /// @dev Access check: revert unless `msg.sender` is the owner of the contract.\n    modifier onlyOwner() {\n        require(msg.sender == _admin(), \"only admin is allowed to call this function\");\n        _;\n    }\n}\n",
+  "sourcePath": "/home/sn/dmd/dmd-meta/hbbft-posdao-contracts/contracts/upgradeability/UpgradeableOwned.sol",
+  "ast": {
+    "absolutePath": "/home/sn/dmd/dmd-meta/hbbft-posdao-contracts/contracts/upgradeability/UpgradeableOwned.sol",
+    "exportedSymbols": {
+      "UpgradeableOwned": [
+        9751
+      ]
+    },
+    "id": 9752,
+    "nodeType": "SourceUnit",
+    "nodes": [
+      {
+        "id": 9734,
+        "literals": [
+          "solidity",
+          "^",
+          "0.5",
+          ".0"
+        ],
+        "nodeType": "PragmaDirective",
+        "src": "0:23:34"
+      },
+      {
+        "absolutePath": "/home/sn/dmd/dmd-meta/hbbft-posdao-contracts/contracts/upgradeability/UpgradeabilityAdmin.sol",
+        "file": "./UpgradeabilityAdmin.sol",
+        "id": 9735,
+        "nodeType": "ImportDirective",
+        "scope": 9752,
+        "sourceUnit": 9684,
+        "src": "25:35:34",
+        "symbolAliases": [],
+        "unitAlias": ""
+      },
+      {
+        "baseContracts": [
+          {
+            "arguments": null,
+            "baseName": {
+              "contractScope": null,
+              "id": 9736,
+              "name": "UpgradeabilityAdmin",
+              "nodeType": "UserDefinedTypeName",
+              "referencedDeclaration": 9683,
+              "src": "92:19:34",
+              "typeDescriptions": {
+                "typeIdentifier": "t_contract$_UpgradeabilityAdmin_$9683",
+                "typeString": "contract UpgradeabilityAdmin"
+              }
+            },
+            "id": 9737,
+            "nodeType": "InheritanceSpecifier",
+            "src": "92:19:34"
+          }
+        ],
+        "contractDependencies": [
+          9683
+        ],
+        "contractKind": "contract",
+        "documentation": null,
+        "fullyImplemented": true,
+        "id": 9751,
+        "linearizedBaseContracts": [
+          9751,
+          9683
+        ],
+        "name": "UpgradeableOwned",
+        "nodeType": "ContractDefinition",
+        "nodes": [
+          {
+            "body": {
+              "id": 9749,
+              "nodeType": "Block",
+              "src": "223:106:34",
+              "statements": [
+                {
+                  "expression": {
+                    "argumentTypes": null,
+                    "arguments": [
+                      {
+                        "argumentTypes": null,
+                        "commonType": {
+                          "typeIdentifier": "t_address",
+                          "typeString": "address"
+                        },
+                        "id": 9744,
+                        "isConstant": false,
+                        "isLValue": false,
+                        "isPure": false,
+                        "lValueRequested": false,
+                        "leftExpression": {
+                          "argumentTypes": null,
+                          "expression": {
+                            "argumentTypes": null,
+                            "id": 9740,
+                            "name": "msg",
+                            "nodeType": "Identifier",
+                            "overloadedDeclarations": [],
+                            "referencedDeclaration": 9766,
+                            "src": "241:3:34",
+                            "typeDescriptions": {
+                              "typeIdentifier": "t_magic_message",
+                              "typeString": "msg"
+                            }
+                          },
+                          "id": 9741,
+                          "isConstant": false,
+                          "isLValue": false,
+                          "isPure": false,
+                          "lValueRequested": false,
+                          "memberName": "sender",
+                          "nodeType": "MemberAccess",
+                          "referencedDeclaration": null,
+                          "src": "241:10:34",
+                          "typeDescriptions": {
+                            "typeIdentifier": "t_address_payable",
+                            "typeString": "address payable"
+                          }
+                        },
+                        "nodeType": "BinaryOperation",
+                        "operator": "==",
+                        "rightExpression": {
+                          "argumentTypes": null,
+                          "arguments": [],
+                          "expression": {
+                            "argumentTypes": [],
+                            "id": 9742,
+                            "name": "_admin",
+                            "nodeType": "Identifier",
+                            "overloadedDeclarations": [],
+                            "referencedDeclaration": 9682,
+                            "src": "255:6:34",
+                            "typeDescriptions": {
+                              "typeIdentifier": "t_function_internal_view$__$returns$_t_address_$",
+                              "typeString": "function () view returns (address)"
+                            }
+                          },
+                          "id": 9743,
+                          "isConstant": false,
+                          "isLValue": false,
+                          "isPure": false,
+                          "kind": "functionCall",
+                          "lValueRequested": false,
+                          "names": [],
+                          "nodeType": "FunctionCall",
+                          "src": "255:8:34",
+                          "typeDescriptions": {
+                            "typeIdentifier": "t_address",
+                            "typeString": "address"
+                          }
+                        },
+                        "src": "241:22:34",
+                        "typeDescriptions": {
+                          "typeIdentifier": "t_bool",
+                          "typeString": "bool"
+                        }
+                      },
+                      {
+                        "argumentTypes": null,
+                        "hexValue": "6f6e6c792061646d696e20697320616c6c6f77656420746f2063616c6c20746869732066756e6374696f6e",
+                        "id": 9745,
+                        "isConstant": false,
+                        "isLValue": false,
+                        "isPure": true,
+                        "kind": "string",
+                        "lValueRequested": false,
+                        "nodeType": "Literal",
+                        "src": "265:45:34",
+                        "subdenomination": null,
+                        "typeDescriptions": {
+                          "typeIdentifier": "t_stringliteral_f0eae0cd1c34a92ff929ae0d471ed7e69f9e717146b58dc66095a0c340ffb5d5",
+                          "typeString": "literal_string \"only admin is allowed to call this function\""
+                        },
+                        "value": "only admin is allowed to call this function"
+                      }
+                    ],
+                    "expression": {
+                      "argumentTypes": [
+                        {
+                          "typeIdentifier": "t_bool",
+                          "typeString": "bool"
+                        },
+                        {
+                          "typeIdentifier": "t_stringliteral_f0eae0cd1c34a92ff929ae0d471ed7e69f9e717146b58dc66095a0c340ffb5d5",
+                          "typeString": "literal_string \"only admin is allowed to call this function\""
+                        }
+                      ],
+                      "id": 9739,
+                      "name": "require",
+                      "nodeType": "Identifier",
+                      "overloadedDeclarations": [
+                        9769,
+                        9770
+                      ],
+                      "referencedDeclaration": 9770,
+                      "src": "233:7:34",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_function_require_pure$_t_bool_$_t_string_memory_ptr_$returns$__$",
+                        "typeString": "function (bool,string memory) pure"
+                      }
+                    },
+                    "id": 9746,
+                    "isConstant": false,
+                    "isLValue": false,
+                    "isPure": false,
+                    "kind": "functionCall",
+                    "lValueRequested": false,
+                    "names": [],
+                    "nodeType": "FunctionCall",
+                    "src": "233:78:34",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_tuple$__$",
+                      "typeString": "tuple()"
+                    }
+                  },
+                  "id": 9747,
+                  "nodeType": "ExpressionStatement",
+                  "src": "233:78:34"
+                },
+                {
+                  "id": 9748,
+                  "nodeType": "PlaceholderStatement",
+                  "src": "321:1:34"
+                }
+              ]
+            },
+            "documentation": "@dev Access check: revert unless `msg.sender` is the owner of the contract.",
+            "id": 9750,
+            "name": "onlyOwner",
+            "nodeType": "ModifierDefinition",
+            "parameters": {
+              "id": 9738,
+              "nodeType": "ParameterList",
+              "parameters": [],
+              "src": "220:2:34"
+            },
+            "src": "202:127:34",
+            "visibility": "internal"
+          }
+        ],
+        "scope": 9752,
+        "src": "63:268:34"
+      }
+    ],
+    "src": "0:332:34"
+  },
+  "legacyAST": {
+    "absolutePath": "/home/sn/dmd/dmd-meta/hbbft-posdao-contracts/contracts/upgradeability/UpgradeableOwned.sol",
+    "exportedSymbols": {
+      "UpgradeableOwned": [
+        9751
+      ]
+    },
+    "id": 9752,
+    "nodeType": "SourceUnit",
+    "nodes": [
+      {
+        "id": 9734,
+        "literals": [
+          "solidity",
+          "^",
+          "0.5",
+          ".0"
+        ],
+        "nodeType": "PragmaDirective",
+        "src": "0:23:34"
+      },
+      {
+        "absolutePath": "/home/sn/dmd/dmd-meta/hbbft-posdao-contracts/contracts/upgradeability/UpgradeabilityAdmin.sol",
+        "file": "./UpgradeabilityAdmin.sol",
+        "id": 9735,
+        "nodeType": "ImportDirective",
+        "scope": 9752,
+        "sourceUnit": 9684,
+        "src": "25:35:34",
+        "symbolAliases": [],
+        "unitAlias": ""
+      },
+      {
+        "baseContracts": [
+          {
+            "arguments": null,
+            "baseName": {
+              "contractScope": null,
+              "id": 9736,
+              "name": "UpgradeabilityAdmin",
+              "nodeType": "UserDefinedTypeName",
+              "referencedDeclaration": 9683,
+              "src": "92:19:34",
+              "typeDescriptions": {
+                "typeIdentifier": "t_contract$_UpgradeabilityAdmin_$9683",
+                "typeString": "contract UpgradeabilityAdmin"
+              }
+            },
+            "id": 9737,
+            "nodeType": "InheritanceSpecifier",
+            "src": "92:19:34"
+          }
+        ],
+        "contractDependencies": [
+          9683
+        ],
+        "contractKind": "contract",
+        "documentation": null,
+        "fullyImplemented": true,
+        "id": 9751,
+        "linearizedBaseContracts": [
+          9751,
+          9683
+        ],
+        "name": "UpgradeableOwned",
+        "nodeType": "ContractDefinition",
+        "nodes": [
+          {
+            "body": {
+              "id": 9749,
+              "nodeType": "Block",
+              "src": "223:106:34",
+              "statements": [
+                {
+                  "expression": {
+                    "argumentTypes": null,
+                    "arguments": [
+                      {
+                        "argumentTypes": null,
+                        "commonType": {
+                          "typeIdentifier": "t_address",
+                          "typeString": "address"
+                        },
+                        "id": 9744,
+                        "isConstant": false,
+                        "isLValue": false,
+                        "isPure": false,
+                        "lValueRequested": false,
+                        "leftExpression": {
+                          "argumentTypes": null,
+                          "expression": {
+                            "argumentTypes": null,
+                            "id": 9740,
+                            "name": "msg",
+                            "nodeType": "Identifier",
+                            "overloadedDeclarations": [],
+                            "referencedDeclaration": 9766,
+                            "src": "241:3:34",
+                            "typeDescriptions": {
+                              "typeIdentifier": "t_magic_message",
+                              "typeString": "msg"
+                            }
+                          },
+                          "id": 9741,
+                          "isConstant": false,
+                          "isLValue": false,
+                          "isPure": false,
+                          "lValueRequested": false,
+                          "memberName": "sender",
+                          "nodeType": "MemberAccess",
+                          "referencedDeclaration": null,
+                          "src": "241:10:34",
+                          "typeDescriptions": {
+                            "typeIdentifier": "t_address_payable",
+                            "typeString": "address payable"
+                          }
+                        },
+                        "nodeType": "BinaryOperation",
+                        "operator": "==",
+                        "rightExpression": {
+                          "argumentTypes": null,
+                          "arguments": [],
+                          "expression": {
+                            "argumentTypes": [],
+                            "id": 9742,
+                            "name": "_admin",
+                            "nodeType": "Identifier",
+                            "overloadedDeclarations": [],
+                            "referencedDeclaration": 9682,
+                            "src": "255:6:34",
+                            "typeDescriptions": {
+                              "typeIdentifier": "t_function_internal_view$__$returns$_t_address_$",
+                              "typeString": "function () view returns (address)"
+                            }
+                          },
+                          "id": 9743,
+                          "isConstant": false,
+                          "isLValue": false,
+                          "isPure": false,
+                          "kind": "functionCall",
+                          "lValueRequested": false,
+                          "names": [],
+                          "nodeType": "FunctionCall",
+                          "src": "255:8:34",
+                          "typeDescriptions": {
+                            "typeIdentifier": "t_address",
+                            "typeString": "address"
+                          }
+                        },
+                        "src": "241:22:34",
+                        "typeDescriptions": {
+                          "typeIdentifier": "t_bool",
+                          "typeString": "bool"
+                        }
+                      },
+                      {
+                        "argumentTypes": null,
+                        "hexValue": "6f6e6c792061646d696e20697320616c6c6f77656420746f2063616c6c20746869732066756e6374696f6e",
+                        "id": 9745,
+                        "isConstant": false,
+                        "isLValue": false,
+                        "isPure": true,
+                        "kind": "string",
+                        "lValueRequested": false,
+                        "nodeType": "Literal",
+                        "src": "265:45:34",
+                        "subdenomination": null,
+                        "typeDescriptions": {
+                          "typeIdentifier": "t_stringliteral_f0eae0cd1c34a92ff929ae0d471ed7e69f9e717146b58dc66095a0c340ffb5d5",
+                          "typeString": "literal_string \"only admin is allowed to call this function\""
+                        },
+                        "value": "only admin is allowed to call this function"
+                      }
+                    ],
+                    "expression": {
+                      "argumentTypes": [
+                        {
+                          "typeIdentifier": "t_bool",
+                          "typeString": "bool"
+                        },
+                        {
+                          "typeIdentifier": "t_stringliteral_f0eae0cd1c34a92ff929ae0d471ed7e69f9e717146b58dc66095a0c340ffb5d5",
+                          "typeString": "literal_string \"only admin is allowed to call this function\""
+                        }
+                      ],
+                      "id": 9739,
+                      "name": "require",
+                      "nodeType": "Identifier",
+                      "overloadedDeclarations": [
+                        9769,
+                        9770
+                      ],
+                      "referencedDeclaration": 9770,
+                      "src": "233:7:34",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_function_require_pure$_t_bool_$_t_string_memory_ptr_$returns$__$",
+                        "typeString": "function (bool,string memory) pure"
+                      }
+                    },
+                    "id": 9746,
+                    "isConstant": false,
+                    "isLValue": false,
+                    "isPure": false,
+                    "kind": "functionCall",
+                    "lValueRequested": false,
+                    "names": [],
+                    "nodeType": "FunctionCall",
+                    "src": "233:78:34",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_tuple$__$",
+                      "typeString": "tuple()"
+                    }
+                  },
+                  "id": 9747,
+                  "nodeType": "ExpressionStatement",
+                  "src": "233:78:34"
+                },
+                {
+                  "id": 9748,
+                  "nodeType": "PlaceholderStatement",
+                  "src": "321:1:34"
+                }
+              ]
+            },
+            "documentation": "@dev Access check: revert unless `msg.sender` is the owner of the contract.",
+            "id": 9750,
+            "name": "onlyOwner",
+            "nodeType": "ModifierDefinition",
+            "parameters": {
+              "id": 9738,
+              "nodeType": "ParameterList",
+              "parameters": [],
+              "src": "220:2:34"
+            },
+            "src": "202:127:34",
+            "visibility": "internal"
+          }
+        ],
+        "scope": 9752,
+        "src": "63:268:34"
+      }
+    ],
+    "src": "0:332:34"
+  },
+  "compiler": {
+    "name": "solc",
+    "version": "0.5.16+commit.9c3226ce.Emscripten.clang"
+  },
+  "networks": {},
+  "schemaVersion": "3.3.1",
+  "updatedAt": "2020-11-10T08:59:06.077Z",
+  "devdoc": {
+    "methods": {}
+  },
+  "userdoc": {
+    "methods": {}
+  }
+}
