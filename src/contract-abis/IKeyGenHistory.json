@@ -1,0 +1,648 @@
+{
+  "contractName": "IKeyGenHistory",
+  "abi": [
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        },
+        {
+          "internalType": "address[]",
+          "name": "",
+          "type": "address[]"
+        },
+        {
+          "internalType": "bytes[]",
+          "name": "",
+          "type": "bytes[]"
+        },
+        {
+          "internalType": "bytes[][]",
+          "name": "",
+          "type": "bytes[][]"
+        }
+      ],
+      "name": "initialize",
+      "outputs": [],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "internalType": "address[]",
+          "name": "",
+          "type": "address[]"
+        }
+      ],
+      "name": "clearPrevKeyGenState",
+      "outputs": [],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "function"
+    }
+  ],
+  "metadata": "{\"compiler\":{\"version\":\"0.5.16+commit.9c3226ce\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"constant\":false,\"inputs\":[{\"internalType\":\"address[]\",\"name\":\"\",\"type\":\"address[]\"}],\"name\":\"clearPrevKeyGenState\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"},{\"internalType\":\"address[]\",\"name\":\"\",\"type\":\"address[]\"},{\"internalType\":\"bytes[]\",\"name\":\"\",\"type\":\"bytes[]\"},{\"internalType\":\"bytes[][]\",\"name\":\"\",\"type\":\"bytes[][]\"}],\"name\":\"initialize\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"}],\"devdoc\":{\"methods\":{}},\"userdoc\":{\"methods\":{}}},\"settings\":{\"compilationTarget\":{\"/home/sn/dmd/dmd-meta/hbbft-posdao-contracts/contracts/interfaces/IKeyGenHistory.sol\":\"IKeyGenHistory\"},\"evmVersion\":\"istanbul\",\"libraries\":{},\"optimizer\":{\"enabled\":true,\"runs\":200},\"remappings\":[]},\"sources\":{\"/home/sn/dmd/dmd-meta/hbbft-posdao-contracts/contracts/interfaces/IKeyGenHistory.sol\":{\"keccak256\":\"0xa80bf122c252d6b3c187f90df34d83c5d1125c7e6d89bd2b8c401169f8d06b7b\",\"urls\":[\"bzz-raw://f1d34026c5e9195c52e2d07b2f4f2706aaf7546cbafe71c0d53c00b9f83a6fb8\",\"dweb:/ipfs/QmbeVVZiwMAVZd5QKgLqAEeTttwmf4L1MTpMArJVaHw3ha\"]}},\"version\":1}",
+  "bytecode": "0x",
+  "deployedBytecode": "0x",
+  "sourceMap": "",
+  "deployedSourceMap": "",
+  "source": "pragma solidity ^0.5.16;\npragma experimental ABIEncoderV2;\n\ninterface IKeyGenHistory {\n    function initialize(\n        address,\n        address[] calldata,\n        bytes[] calldata,\n        bytes[][] calldata\n    ) external;\n    function clearPrevKeyGenState(address[] calldata) external;\n}\n",
+  "sourcePath": "/home/sn/dmd/dmd-meta/hbbft-posdao-contracts/contracts/interfaces/IKeyGenHistory.sol",
+  "ast": {
+    "absolutePath": "/home/sn/dmd/dmd-meta/hbbft-posdao-contracts/contracts/interfaces/IKeyGenHistory.sol",
+    "exportedSymbols": {
+      "IKeyGenHistory": [
+        8811
+      ]
+    },
+    "id": 8812,
+    "nodeType": "SourceUnit",
+    "nodes": [
+      {
+        "id": 8788,
+        "literals": [
+          "solidity",
+          "^",
+          "0.5",
+          ".16"
+        ],
+        "nodeType": "PragmaDirective",
+        "src": "0:24:17"
+      },
+      {
+        "id": 8789,
+        "literals": [
+          "experimental",
+          "ABIEncoderV2"
+        ],
+        "nodeType": "PragmaDirective",
+        "src": "25:33:17"
+      },
+      {
+        "baseContracts": [],
+        "contractDependencies": [],
+        "contractKind": "interface",
+        "documentation": null,
+        "fullyImplemented": false,
+        "id": 8811,
+        "linearizedBaseContracts": [
+          8811
+        ],
+        "name": "IKeyGenHistory",
+        "nodeType": "ContractDefinition",
+        "nodes": [
+          {
+            "body": null,
+            "documentation": null,
+            "id": 8804,
+            "implemented": false,
+            "kind": "function",
+            "modifiers": [],
+            "name": "initialize",
+            "nodeType": "FunctionDefinition",
+            "parameters": {
+              "id": 8802,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 8791,
+                  "name": "",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 8804,
+                  "src": "120:7:17",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_address",
+                    "typeString": "address"
+                  },
+                  "typeName": {
+                    "id": 8790,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "120:7:17",
+                    "stateMutability": "nonpayable",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "value": null,
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 8794,
+                  "name": "",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 8804,
+                  "src": "137:18:17",
+                  "stateVariable": false,
+                  "storageLocation": "calldata",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_array$_t_address_$dyn_calldata_ptr",
+                    "typeString": "address[]"
+                  },
+                  "typeName": {
+                    "baseType": {
+                      "id": 8792,
+                      "name": "address",
+                      "nodeType": "ElementaryTypeName",
+                      "src": "137:7:17",
+                      "stateMutability": "nonpayable",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_address",
+                        "typeString": "address"
+                      }
+                    },
+                    "id": 8793,
+                    "length": null,
+                    "nodeType": "ArrayTypeName",
+                    "src": "137:9:17",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_array$_t_address_$dyn_storage_ptr",
+                      "typeString": "address[]"
+                    }
+                  },
+                  "value": null,
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 8797,
+                  "name": "",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 8804,
+                  "src": "165:16:17",
+                  "stateVariable": false,
+                  "storageLocation": "calldata",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_array$_t_bytes_calldata_$dyn_calldata_ptr",
+                    "typeString": "bytes[]"
+                  },
+                  "typeName": {
+                    "baseType": {
+                      "id": 8795,
+                      "name": "bytes",
+                      "nodeType": "ElementaryTypeName",
+                      "src": "165:5:17",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_bytes_storage_ptr",
+                        "typeString": "bytes"
+                      }
+                    },
+                    "id": 8796,
+                    "length": null,
+                    "nodeType": "ArrayTypeName",
+                    "src": "165:7:17",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_array$_t_bytes_storage_$dyn_storage_ptr",
+                      "typeString": "bytes[]"
+                    }
+                  },
+                  "value": null,
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 8801,
+                  "name": "",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 8804,
+                  "src": "191:18:17",
+                  "stateVariable": false,
+                  "storageLocation": "calldata",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_array$_t_array$_t_bytes_calldata_$dyn_calldata_$dyn_calldata_ptr",
+                    "typeString": "bytes[][]"
+                  },
+                  "typeName": {
+                    "baseType": {
+                      "baseType": {
+                        "id": 8798,
+                        "name": "bytes",
+                        "nodeType": "ElementaryTypeName",
+                        "src": "191:5:17",
+                        "typeDescriptions": {
+                          "typeIdentifier": "t_bytes_storage_ptr",
+                          "typeString": "bytes"
+                        }
+                      },
+                      "id": 8799,
+                      "length": null,
+                      "nodeType": "ArrayTypeName",
+                      "src": "191:7:17",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_array$_t_bytes_storage_$dyn_storage_ptr",
+                        "typeString": "bytes[]"
+                      }
+                    },
+                    "id": 8800,
+                    "length": null,
+                    "nodeType": "ArrayTypeName",
+                    "src": "191:9:17",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_array$_t_array$_t_bytes_storage_$dyn_storage_$dyn_storage_ptr",
+                      "typeString": "bytes[][]"
+                    }
+                  },
+                  "value": null,
+                  "visibility": "internal"
+                }
+              ],
+              "src": "110:105:17"
+            },
+            "returnParameters": {
+              "id": 8803,
+              "nodeType": "ParameterList",
+              "parameters": [],
+              "src": "224:0:17"
+            },
+            "scope": 8811,
+            "src": "91:134:17",
+            "stateMutability": "nonpayable",
+            "superFunction": null,
+            "visibility": "external"
+          },
+          {
+            "body": null,
+            "documentation": null,
+            "id": 8810,
+            "implemented": false,
+            "kind": "function",
+            "modifiers": [],
+            "name": "clearPrevKeyGenState",
+            "nodeType": "FunctionDefinition",
+            "parameters": {
+              "id": 8808,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 8807,
+                  "name": "",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 8810,
+                  "src": "260:18:17",
+                  "stateVariable": false,
+                  "storageLocation": "calldata",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_array$_t_address_$dyn_calldata_ptr",
+                    "typeString": "address[]"
+                  },
+                  "typeName": {
+                    "baseType": {
+                      "id": 8805,
+                      "name": "address",
+                      "nodeType": "ElementaryTypeName",
+                      "src": "260:7:17",
+                      "stateMutability": "nonpayable",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_address",
+                        "typeString": "address"
+                      }
+                    },
+                    "id": 8806,
+                    "length": null,
+                    "nodeType": "ArrayTypeName",
+                    "src": "260:9:17",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_array$_t_address_$dyn_storage_ptr",
+                      "typeString": "address[]"
+                    }
+                  },
+                  "value": null,
+                  "visibility": "internal"
+                }
+              ],
+              "src": "259:20:17"
+            },
+            "returnParameters": {
+              "id": 8809,
+              "nodeType": "ParameterList",
+              "parameters": [],
+              "src": "288:0:17"
+            },
+            "scope": 8811,
+            "src": "230:59:17",
+            "stateMutability": "nonpayable",
+            "superFunction": null,
+            "visibility": "external"
+          }
+        ],
+        "scope": 8812,
+        "src": "60:231:17"
+      }
+    ],
+    "src": "0:292:17"
+  },
+  "legacyAST": {
+    "absolutePath": "/home/sn/dmd/dmd-meta/hbbft-posdao-contracts/contracts/interfaces/IKeyGenHistory.sol",
+    "exportedSymbols": {
+      "IKeyGenHistory": [
+        8811
+      ]
+    },
+    "id": 8812,
+    "nodeType": "SourceUnit",
+    "nodes": [
+      {
+        "id": 8788,
+        "literals": [
+          "solidity",
+          "^",
+          "0.5",
+          ".16"
+        ],
+        "nodeType": "PragmaDirective",
+        "src": "0:24:17"
+      },
+      {
+        "id": 8789,
+        "literals": [
+          "experimental",
+          "ABIEncoderV2"
+        ],
+        "nodeType": "PragmaDirective",
+        "src": "25:33:17"
+      },
+      {
+        "baseContracts": [],
+        "contractDependencies": [],
+        "contractKind": "interface",
+        "documentation": null,
+        "fullyImplemented": false,
+        "id": 8811,
+        "linearizedBaseContracts": [
+          8811
+        ],
+        "name": "IKeyGenHistory",
+        "nodeType": "ContractDefinition",
+        "nodes": [
+          {
+            "body": null,
+            "documentation": null,
+            "id": 8804,
+            "implemented": false,
+            "kind": "function",
+            "modifiers": [],
+            "name": "initialize",
+            "nodeType": "FunctionDefinition",
+            "parameters": {
+              "id": 8802,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 8791,
+                  "name": "",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 8804,
+                  "src": "120:7:17",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_address",
+                    "typeString": "address"
+                  },
+                  "typeName": {
+                    "id": 8790,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "120:7:17",
+                    "stateMutability": "nonpayable",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "value": null,
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 8794,
+                  "name": "",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 8804,
+                  "src": "137:18:17",
+                  "stateVariable": false,
+                  "storageLocation": "calldata",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_array$_t_address_$dyn_calldata_ptr",
+                    "typeString": "address[]"
+                  },
+                  "typeName": {
+                    "baseType": {
+                      "id": 8792,
+                      "name": "address",
+                      "nodeType": "ElementaryTypeName",
+                      "src": "137:7:17",
+                      "stateMutability": "nonpayable",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_address",
+                        "typeString": "address"
+                      }
+                    },
+                    "id": 8793,
+                    "length": null,
+                    "nodeType": "ArrayTypeName",
+                    "src": "137:9:17",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_array$_t_address_$dyn_storage_ptr",
+                      "typeString": "address[]"
+                    }
+                  },
+                  "value": null,
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 8797,
+                  "name": "",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 8804,
+                  "src": "165:16:17",
+                  "stateVariable": false,
+                  "storageLocation": "calldata",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_array$_t_bytes_calldata_$dyn_calldata_ptr",
+                    "typeString": "bytes[]"
+                  },
+                  "typeName": {
+                    "baseType": {
+                      "id": 8795,
+                      "name": "bytes",
+                      "nodeType": "ElementaryTypeName",
+                      "src": "165:5:17",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_bytes_storage_ptr",
+                        "typeString": "bytes"
+                      }
+                    },
+                    "id": 8796,
+                    "length": null,
+                    "nodeType": "ArrayTypeName",
+                    "src": "165:7:17",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_array$_t_bytes_storage_$dyn_storage_ptr",
+                      "typeString": "bytes[]"
+                    }
+                  },
+                  "value": null,
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 8801,
+                  "name": "",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 8804,
+                  "src": "191:18:17",
+                  "stateVariable": false,
+                  "storageLocation": "calldata",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_array$_t_array$_t_bytes_calldata_$dyn_calldata_$dyn_calldata_ptr",
+                    "typeString": "bytes[][]"
+                  },
+                  "typeName": {
+                    "baseType": {
+                      "baseType": {
+                        "id": 8798,
+                        "name": "bytes",
+                        "nodeType": "ElementaryTypeName",
+                        "src": "191:5:17",
+                        "typeDescriptions": {
+                          "typeIdentifier": "t_bytes_storage_ptr",
+                          "typeString": "bytes"
+                        }
+                      },
+                      "id": 8799,
+                      "length": null,
+                      "nodeType": "ArrayTypeName",
+                      "src": "191:7:17",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_array$_t_bytes_storage_$dyn_storage_ptr",
+                        "typeString": "bytes[]"
+                      }
+                    },
+                    "id": 8800,
+                    "length": null,
+                    "nodeType": "ArrayTypeName",
+                    "src": "191:9:17",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_array$_t_array$_t_bytes_storage_$dyn_storage_$dyn_storage_ptr",
+                      "typeString": "bytes[][]"
+                    }
+                  },
+                  "value": null,
+                  "visibility": "internal"
+                }
+              ],
+              "src": "110:105:17"
+            },
+            "returnParameters": {
+              "id": 8803,
+              "nodeType": "ParameterList",
+              "parameters": [],
+              "src": "224:0:17"
+            },
+            "scope": 8811,
+            "src": "91:134:17",
+            "stateMutability": "nonpayable",
+            "superFunction": null,
+            "visibility": "external"
+          },
+          {
+            "body": null,
+            "documentation": null,
+            "id": 8810,
+            "implemented": false,
+            "kind": "function",
+            "modifiers": [],
+            "name": "clearPrevKeyGenState",
+            "nodeType": "FunctionDefinition",
+            "parameters": {
+              "id": 8808,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 8807,
+                  "name": "",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 8810,
+                  "src": "260:18:17",
+                  "stateVariable": false,
+                  "storageLocation": "calldata",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_array$_t_address_$dyn_calldata_ptr",
+                    "typeString": "address[]"
+                  },
+                  "typeName": {
+                    "baseType": {
+                      "id": 8805,
+                      "name": "address",
+                      "nodeType": "ElementaryTypeName",
+                      "src": "260:7:17",
+                      "stateMutability": "nonpayable",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_address",
+                        "typeString": "address"
+                      }
+                    },
+                    "id": 8806,
+                    "length": null,
+                    "nodeType": "ArrayTypeName",
+                    "src": "260:9:17",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_array$_t_address_$dyn_storage_ptr",
+                      "typeString": "address[]"
+                    }
+                  },
+                  "value": null,
+                  "visibility": "internal"
+                }
+              ],
+              "src": "259:20:17"
+            },
+            "returnParameters": {
+              "id": 8809,
+              "nodeType": "ParameterList",
+              "parameters": [],
+              "src": "288:0:17"
+            },
+            "scope": 8811,
+            "src": "230:59:17",
+            "stateMutability": "nonpayable",
+            "superFunction": null,
+            "visibility": "external"
+          }
+        ],
+        "scope": 8812,
+        "src": "60:231:17"
+      }
+    ],
+    "src": "0:292:17"
+  },
+  "compiler": {
+    "name": "solc",
+    "version": "0.5.16+commit.9c3226ce.Emscripten.clang"
+  },
+  "networks": {},
+  "schemaVersion": "3.3.1",
+  "updatedAt": "2020-11-10T08:59:06.067Z",
+  "devdoc": {
+    "methods": {}
+  },
+  "userdoc": {
+    "methods": {}
+  }
+}
