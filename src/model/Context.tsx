@@ -8,12 +8,14 @@ import { AbiItem } from 'web3-utils';
 import { abi as ValidatorSetAbi } from '../contract-abis/ValidatorSetHbbft.json';
 import { abi as StakingAbi } from '../contract-abis/StakingHbbftCoins.json';
 import { abi as BlockRewardAbi } from '../contract-abis/BlockRewardHbbftCoins.json';
+import { abi as KeyGenHistoryAbi } from '../contract-abis/KeyGenHistory.json';
 import { ValidatorSetHbbft } from '../contracts/ValidatorSetHbbft';
 import { StakingHbbftCoins } from '../contracts/StakingHbbftCoins';
 import { BlockRewardHbbftCoins } from '../contracts/BlockRewardHbbftCoins';
+import { KeyGenHistory } from '../contracts/KeyGenHistory';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
-const namehash = require('eth-ens-namehash');
+// const namehash = require('eth-ens-namehash');
 
 // needed for querying injected web3 (e.g. from Metamask)
 declare global {
@@ -67,6 +69,8 @@ interface IDelegator {
 // TODO: when is it worth it creating a class / dedicated file?
 export interface IPool {
   isActive: boolean; // currently "active" pool
+  isToBeElected: boolean; // is to be elected.
+  isPendingValidator: boolean; // pending validator for the next staking epoch.
   readonly stakingAddress: Address;
   ensName: string;
   miningAddress: Address;
@@ -86,9 +90,11 @@ export interface IPool {
   validatorRewardShare: number; // percent
   claimableReward: Amount;
   isBanned(): boolean;
-  bannedUntilEpoch: number;
+  bannedUntil: BN;
   banCount: number;
   blocksAuthored: number;
+  parts: string; // if part of the treshhold key, or pending validator, this holds the PARTS
+  numberOfAcks: number; // if part of the treshhold key, or pending validator, this holds the number of ACKS
 }
 
 // TODO: dry-run / estimate gas before sending actual transactions
@@ -393,6 +399,8 @@ export default class Context {
 
   private brContract!: BlockRewardHbbftCoins;
 
+  private kghContract!: KeyGenHistory;
+
   // start block of the first epoch (epoch 0) since posdao was activated
   // private posdaoStartBlock!: number;
 
@@ -421,6 +429,8 @@ export default class Context {
       this.stContract = new this.web3.eth.Contract((StakingAbi as AbiItem[]), stAddress);
       const brAddress = await this.vsContract.methods.blockRewardContract().call();
       this.brContract = new this.web3WS.eth.Contract((BlockRewardAbi as AbiItem[]), brAddress);
+      const kghAddress = await this.vsContract.methods.keyGenHistoryContract().call();
+      this.kghContract = new this.web3.eth.Contract((KeyGenHistoryAbi as AbiItem[]), kghAddress);
     } catch (e) {
       console.log(`initializing contracts failed: ${e}`);
       throw e;
@@ -429,13 +439,14 @@ export default class Context {
     this.candidateMinStake = await this.stContract.methods.candidateMinStake().call();
     this.delegatorMinStake = await this.stContract.methods.delegatorMinStake().call();
 
-
     await this.retrieveValuesFromContract();
     // this.posdaoStartBlock = this.stakingEpochStartBlock - this.stakingEpoch * this.epochDuration;
   }
 
-  private async retrieveValuesFromContract() {
+  private async retrieveValuesFromContract(): Promise<void> {
     this.epochDuration = parseInt(await this.stContract.methods.stakingFixedEpochDuration().call());
+    const epochStartBlock = parseInt(await this.stContract.methods.stakingEpochStartBlock().call());
+    console.error(epochStartBlock);
     this.stakingEpoch = parseInt(await this.stContract.methods.stakingEpoch().call());
     this.stakingEpochStartTime = parseInt(await this.stContract.methods.stakingEpochStartTime().call());
     this.stakingEpochEndTime = parseInt(await this.stContract.methods.stakingFixedEpochEndTime().call());
@@ -450,7 +461,15 @@ export default class Context {
   private async syncPoolsState(): Promise<void> {
     this.pools = [];
     const activePoolAddrs: Array<string> = await this.stContract.methods.getPools().call();
+    console.log('active Pools:', activePoolAddrs);
     const inactivePoolAddrs: Array<string> = await this.stContract.methods.getPoolsInactive().call();
+    console.log('inactive Pools:', inactivePoolAddrs);
+    const toBeElectedPoolAddrs = await this.stContract.methods.getPoolsToBeElected().call();
+    console.log('to be elected Pools:', toBeElectedPoolAddrs);
+    const pendingValidatorAddrs = await this.vsContract.methods.getPendingValidators().call();
+    console.log('pendingMiningPools:', pendingValidatorAddrs);
+
+
     console.log(`syncing ${activePoolAddrs.length} active and ${inactivePoolAddrs.length} inactive pools...`);
     const poolAddrs = activePoolAddrs.concat(inactivePoolAddrs);
     await Promise.all(poolAddrs.map(async (stakingAddress) => {
@@ -470,10 +489,6 @@ export default class Context {
 
       const delegatorAddrs: Array<string> = await this.stContract.methods.poolDelegators(stakingAddress).call();
       const bannedUntil = new BN((await this.vsContract.methods.bannedUntil(miningAddress).call()));
-      // TODO fix: is rounding up what we want?
-      // const bannedUntilEpoch = this.stakingEpoch
-      //  + Math.ceil((bannedUntilBlock - this.stakingEpochStartBlock) / this.epochDuration);
-      const bannedUntilEpoch = 0;
 
       const banCount = parseInt(await this.vsContract.methods.banCounter(miningAddress).call());
 
@@ -483,21 +498,41 @@ export default class Context {
         .sort((e1, e2) => e1.blockNumber - e2.blockNumber);
       console.assert(poolAddedEvent.length > 0, `no AddedPool event found for ${stakingAddress}`);
 
+      if (poolAddedEvent.length === 0) {
+        console.error(stEvents);
+      }
+
       // result can be negative for pools added as "initial validators", thus setting 0 as min value
-      // const addedInEpoch = Math.max(0, Math.floor((poolAddedEvent[0].blockNumber - this.posdaoStartBlock) / this.epochDuration));
+      // const addedInEpoch = Math.max(0, Math.floor((poolAddedEvent[0].blockNumber
+      //  - this.posdaoStartBlock) / this.epochDuration));
 
       // TODO FIX: what's the use for addedInEpoch ?!
       const addedInEpoch = 0;
 
       // fetch and add the number of blocks authored per epoch since this pool was created
       // const blocksAuthored = await [...Array(this.stakingEpoch - addedInEpoch)]
-      //   .map(async (_, i) => parseInt(await this.brContract.methods.blocksCreated(this.stakingEpoch - i, miningAddress).call()))
+      //   .map(async (_, i) => parseInt(await this.brContract.methods.blocksCreated(this.stakingEpoch
+      // - i, miningAddress).call()))
       //   .reduce(async (acc, cur) => await acc + await cur);
 
       const blocksAuthored = 0;
 
-      const newPool = {
+      const isPendingValidator = pendingValidatorAddrs.indexOf(miningAddress) >= 0;
+
+      let partsOfValidator = '';
+      let numberOfAcksOfValidator = 0;
+
+      if (isPendingValidator) {
+        partsOfValidator = await this.kghContract.methods.parts(miningAddress).call();
+        const acksLengthBN = new BN(await this.kghContract.methods.getAcksLength(miningAddress).call());
+        numberOfAcksOfValidator = acksLengthBN.toNumber();
+      }
+
+
+      const newPool: IPool = {
         isActive: activePoolAddrs.indexOf(stakingAddress) >= 0,
+        isToBeElected: toBeElectedPoolAddrs.indexOf(stakingAddress) >= 0,
+        isPendingValidator,
         miningAddress,
         isCurrentValidator: false, // set by handler for new blocks
         stakingAddress,
@@ -511,14 +546,20 @@ export default class Context {
         validatorRewardShare: await this.getValidatorRewardShare(stakingAddress),
         validatorStakeShare: await this.getValidatorStakeShare(miningAddress),
         claimableReward: await this.getClaimableReward(stakingAddress),
-        bannedUntilEpoch,
+        bannedUntil,
         isBanned: () => bannedUntil.gt(new BN(this.currentTimestamp)),
         banCount,
         addedInEpoch,
         blocksAuthored,
+        parts: partsOfValidator,
+        numberOfAcks: numberOfAcksOfValidator,
       };
+      console.log('adding:', newPool);
+
       // done in the background, non-blocking
-      ensNamePromise.then((name) => newPool.ensName = name);
+      ensNamePromise.then((name) => {
+        newPool.ensName = name;
+      });
 
       this.pools.push(newPool);
     }));
@@ -526,11 +567,12 @@ export default class Context {
   }
 
   /* eslint-disable class-methods-use-this */
-
+  /* eslint-disable @typescript-eslint/no-unused-vars */
   private async getEnsNameOf(addr: Address): Promise<string> {
     return '';
   }
 
+  /* eslint-enable @typescript-eslint/no-unused-vars */
   /* eslint-enable class-methods-use-this */
 
   // TODO: Reactivate ENS Name Support.
