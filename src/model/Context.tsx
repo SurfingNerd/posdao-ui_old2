@@ -119,6 +119,9 @@ export default class Context {
 
   @observable public stakingEpoch!: number;
 
+  @observable public epochStartBlock!: number;
+
+
   // TODO: find better name
   @observable public canStakeOrWithdrawNow = false;
 
@@ -407,6 +410,7 @@ export default class Context {
   // TODO: we should probably get rid of either start or end block, can be calculated with epochDuration
   private stakingEpochStartTime!: number;
 
+
   private stakingEpochEndTime!: number;
 
   private stakeWithdrawDisallowPeriod!: number;
@@ -445,8 +449,7 @@ export default class Context {
 
   private async retrieveValuesFromContract(): Promise<void> {
     this.epochDuration = parseInt(await this.stContract.methods.stakingFixedEpochDuration().call());
-    const epochStartBlock = parseInt(await this.stContract.methods.stakingEpochStartBlock().call());
-    console.error(epochStartBlock);
+    this.epochStartBlock = parseInt(await this.stContract.methods.stakingEpochStartBlock().call());
     this.stakingEpoch = parseInt(await this.stContract.methods.stakingEpoch().call());
     this.stakingEpochStartTime = parseInt(await this.stContract.methods.stakingEpochStartTime().call());
     this.stakingEpochEndTime = parseInt(await this.stContract.methods.stakingFixedEpochEndTime().call());
@@ -492,15 +495,18 @@ export default class Context {
 
       const banCount = parseInt(await this.vsContract.methods.banCounter(miningAddress).call());
 
-      const stEvents = await this.stContract.getPastEvents('allEvents', { fromBlock: 0 });
+      // const stEvents = await this.stContract.getPastEvents('allEvents', { fromBlock: 0 });
       // there are between 1 and n AddedPool events per pool. We're looking for the first one
-      const poolAddedEvent = stEvents.filter((e) => e.event === 'AddedPool' && e.returnValues.poolStakingAddress === stakingAddress)
-        .sort((e1, e2) => e1.blockNumber - e2.blockNumber);
-      console.assert(poolAddedEvent.length > 0, `no AddedPool event found for ${stakingAddress}`);
+      // const poolAddedEvent = stEvents.filter((e) => e.event === 'AddedPool'
+      //  && e.returnValues.poolStakingAddress === stakingAddress)
 
-      if (poolAddedEvent.length === 0) {
-        console.error(stEvents);
-      }
+      //   .sort((e1, e2) => e1.blockNumber - e2.blockNumber);
+
+      //  console.assert(poolAddedEvent.length > 0, `no AddedPool event found for ${stakingAddress}`);
+
+      // if (poolAddedEvent.length === 0) {
+      //   console.error(stEvents);
+      // }
 
       // result can be negative for pools added as "initial validators", thus setting 0 as min value
       // const addedInEpoch = Math.max(0, Math.floor((poolAddedEvent[0].blockNumber
