@@ -140,6 +140,10 @@ export default class PoolView extends React.Component<PoolViewProps, {}> {
       extraInfo += `CURRENTLY BANNED - until epoch ${pool.bannedUntil.toString()}`;
     }
 
+    if (pool.isToBeElected) {
+      extraInfo += ' ! elected for NEXT epoch.';
+    }
+
     let validatorInfo = <div />;
 
     if (pool.isPendingValidator) {

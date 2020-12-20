@@ -211,7 +211,7 @@ export default class Context {
    * @parm initialStake amount (in ATS) of initial candidate stake
    * TODO: figure out return type and how to deal with asynchrony and errors
    */
-  public async createPool(miningKeyAddr: Address, initialStake: number): Promise<void> {
+  public async createPool(miningKeyAddr: Address, publicKey: string, initialStake: number): Promise<void> {
     console.log(`${this.myAddr} wants to add Pool with initial stake ${initialStake}`);
 
     if (!this.canStakeOrWithdrawNow) {
@@ -222,10 +222,10 @@ export default class Context {
     txOpts.value = this.web3.utils.toWei(initialStake.toString());
 
     try {
-      const publicKey = '0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000';
+      const publicKeyHex = `0x${publicKey}`;
       const ip = '0x00000000000000000000000000000000';
       // <amount> argument is ignored by the contract (exists for chains with token based staking)
-      const receipt = await this.stContract.methods.addPool(miningKeyAddr, publicKey, ip).send(txOpts);
+      const receipt = await this.stContract.methods.addPool(miningKeyAddr, publicKeyHex, ip).send(txOpts);
       console.log(`receipt: ${JSON.stringify(receipt, null, 2)}`);
     } catch (e) {
       console.log(`failed with ${e}`);

@@ -12,7 +12,11 @@ interface AppProps {
 @observer
 class App extends React.Component<AppProps, {}> {
   private miningKeyAddr = '';
+  private publicKey = '';
   private stakeAmountStr = '';
+
+  private examplePublicKey = '00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000';
+  
   @observable private processing = false;
 
   @action.bound
@@ -35,7 +39,7 @@ class App extends React.Component<AppProps, {}> {
     } else if (stakeAmount < context.candidateMinStake.asNumber()) {
       alert('insufficient candidate (pool owner) stake');
     } else {
-      await context.createPool(this.miningKeyAddr, stakeAmount);
+      await context.createPool(this.miningKeyAddr, this.publicKey, stakeAmount);
     }
     this.processing = false;
   }
@@ -103,6 +107,7 @@ class App extends React.Component<AppProps, {}> {
           <form spellCheck={false}>
             <label>pool address:   <input type="text" value={context.myAddr} readOnly title="determined by current wallet address" /></label> <br />
             <label>mining address: <input type="text" onChange={(e) => (this.miningKeyAddr = e.currentTarget.value)} /></label> <br />
+            <label>public key: <input type="text" defaultValue={this.examplePublicKey} onChange={(e) => (this.publicKey = e.currentTarget.value)} /></label> <br />
             <label>stake amount (ATS):  <input type="number" min={minStakeAmount} defaultValue={this.stakeAmountStr} onChange={(e) => (this.stakeAmountStr = e.currentTarget.value)} /></label> <br />
             <div className="spinner-border" hidden={!this.processing} role="status">
               <span className="sr-only">Loading...</span>
