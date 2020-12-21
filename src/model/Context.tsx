@@ -1,10 +1,9 @@
-// TODO: should this be .ts or .tsx ?
-
 import Web3 from 'web3';
 import BN from 'bn.js';
 import { computed, observable } from 'mobx';
 import { BlockHeader } from 'web3-eth';
 import { AbiItem } from 'web3-utils';
+import { publicToAddress } from 'ethereumjs-util';
 import { abi as ValidatorSetAbi } from '../contract-abis/ValidatorSetHbbft.json';
 import { abi as StakingAbi } from '../contract-abis/StakingHbbftCoins.json';
 import { abi as BlockRewardAbi } from '../contract-abis/BlockRewardHbbftCoins.json';
@@ -206,6 +205,22 @@ export default class Context {
     );
   }
 
+  public static getAddressFromPublicKeyInfoText(publicKey: string): string {
+    try {
+      if (publicKey.length === 0) {
+        return '';
+      }
+      return Context.getAddressFromPublicKey(publicKey);
+    } catch (err) {
+      return 'Invalid Public Key.';
+    }
+  }
+
+  public static getAddressFromPublicKey(publicKey: string): string {
+    const resultBuffer = publicToAddress(Buffer.from(publicKey, 'hex'), true);
+    return `0x${resultBuffer.toString('hex')}`;
+  }
+
   /** creates a pool for the sender account, making the sender account a posdao "candidate"
    * The caller is responsible for parameter validity, checking sender balance etc.
    * @parm initialStake amount (in ATS) of initial candidate stake
@@ -216,6 +231,11 @@ export default class Context {
 
     if (!this.canStakeOrWithdrawNow) {
       return;
+    }
+
+    const miningKeyAddrCompare = this.getAddressFromPublicKey(publicKey);
+    if (miningKeyAddr !== miningKeyAddrCompare) {
+      throw Error(`Expected public key to match address! ${miningKeyAddrCompare}`);
     }
 
     const txOpts = { ...this.defaultTxOpts };

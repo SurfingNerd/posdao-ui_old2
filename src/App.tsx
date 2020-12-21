@@ -11,13 +11,15 @@ interface AppProps {
 
 @observer
 class App extends React.Component<AppProps, {}> {
-  private miningKeyAddr = '';
+  
   private publicKey = '';
   private stakeAmountStr = '';
 
   private examplePublicKey = '00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000';
   
   @observable private processing = false;
+
+  @observable private calculatedMiningAddress = '';
 
   @action.bound
   private async handleAddPool() {
@@ -26,11 +28,11 @@ class App extends React.Component<AppProps, {}> {
     const stakeAmount = parseInt(this.stakeAmountStr);
     if (Number.isNaN(stakeAmount)) {
       alert('no amount entered');
-    } else if (!this.miningKeyAddr.isAddress()) {
+    } else if (!this.calculatedMiningAddress.isAddress()) {
       alert('no valid mining address entered');
-    } else if (context.myAddr === this.miningKeyAddr) {
+    } else if (context.myAddr === this.calculatedMiningAddress) {
       alert('staking/pool address and mining address cannot be the same');
-    } else if (!await context.areAddressesValidForCreatePool(context.myAddr, this.miningKeyAddr)) {
+    } else if (!await context.areAddressesValidForCreatePool(context.myAddr, this.calculatedMiningAddress)) {
       alert('staking or mining key are or were already in use with a pool');
     } else if (stakeAmount > context.myBalance.asNumber()) {
       alert(`insufficient balance (${context.myBalance.print()}) for selected amount ${stakeAmount}`);
@@ -39,7 +41,7 @@ class App extends React.Component<AppProps, {}> {
     } else if (stakeAmount < context.candidateMinStake.asNumber()) {
       alert('insufficient candidate (pool owner) stake');
     } else {
-      await context.createPool(this.miningKeyAddr, this.publicKey, stakeAmount);
+      await context.createPool(this.calculatedMiningAddress, this.publicKey, stakeAmount);
     }
     this.processing = false;
   }
@@ -106,8 +108,11 @@ class App extends React.Component<AppProps, {}> {
         <div id="addPool" hidden={context.iHaveAPool || context.isSyncingPools}>
           <form spellCheck={false}>
             <label>pool address:   <input type="text" value={context.myAddr} readOnly title="determined by current wallet address" /></label> <br />
-            <label>mining address: <input type="text" onChange={(e) => (this.miningKeyAddr = e.currentTarget.value)} /></label> <br />
-            <label>public key: <input type="text" defaultValue={this.examplePublicKey} onChange={(e) => (this.publicKey = e.currentTarget.value)} /></label> <br />
+            <label>public key: <input type="text" defaultValue={this.examplePublicKey} onChange={(e) => {
+                this.publicKey = e.currentTarget.value;
+                this.calculatedMiningAddress = context.getAddressFromPublicKeyInfoText(this.publicKey);
+                }} /></label> <br />
+            <label>mining address:</label><label>{this.calculatedMiningAddress}</label><br />
             <label>stake amount (ATS):  <input type="number" min={minStakeAmount} defaultValue={this.stakeAmountStr} onChange={(e) => (this.stakeAmountStr = e.currentTarget.value)} /></label> <br />
             <div className="spinner-border" hidden={!this.processing} role="status">
               <span className="sr-only">Loading...</span>
