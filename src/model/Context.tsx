@@ -233,7 +233,7 @@ export default class Context {
       return;
     }
 
-    const miningKeyAddrCompare = this.getAddressFromPublicKey(publicKey);
+    const miningKeyAddrCompare = Context.getAddressFromPublicKey(publicKey);
     if (miningKeyAddr !== miningKeyAddrCompare) {
       throw Error(`Expected public key to match address! ${miningKeyAddrCompare}`);
     }

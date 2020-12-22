@@ -110,7 +110,7 @@ class App extends React.Component<AppProps, {}> {
             <label>pool address:   <input type="text" value={context.myAddr} readOnly title="determined by current wallet address" /></label> <br />
             <label>public key: <input type="text" defaultValue={this.examplePublicKey} onChange={(e) => {
                 this.publicKey = e.currentTarget.value;
-                this.calculatedMiningAddress = context.getAddressFromPublicKeyInfoText(this.publicKey);
+                this.calculatedMiningAddress = Context.getAddressFromPublicKeyInfoText(this.publicKey);
                 }} /></label> <br />
             <label>mining address:</label><label>{this.calculatedMiningAddress}</label><br />
             <label>stake amount (ATS):  <input type="number" min={minStakeAmount} defaultValue={this.stakeAmountStr} onChange={(e) => (this.stakeAmountStr = e.currentTarget.value)} /></label> <br />
