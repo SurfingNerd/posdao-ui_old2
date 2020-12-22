@@ -113,7 +113,7 @@ class App extends React.Component<AppProps, {}> {
                 this.calculatedMiningAddress = Context.getAddressFromPublicKeyInfoText(this.publicKey);
                 }} /></label> <br />
             <label>mining address:</label><label>{this.calculatedMiningAddress}</label><br />
-            <label>stake amount (ATS):  <input type="number" min={minStakeAmount} defaultValue={this.stakeAmountStr} onChange={(e) => (this.stakeAmountStr = e.currentTarget.value)} /></label> <br />
+            <label>stake amount ({context.coinSymbol}):  <input type="number" min={minStakeAmount} defaultValue={this.stakeAmountStr} onChange={(e) => (this.stakeAmountStr = e.currentTarget.value)} /></label> <br />
             <div className="spinner-border" hidden={!this.processing} role="status">
               <span className="sr-only">Loading...</span>
             </div>
